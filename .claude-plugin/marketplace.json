@@ -1,0 +1,13 @@
+{
+  "name": "qsdlc-marketplace",
+  "owner": {
+    "name": "Trevorything"
+  },
+  "plugins": [
+    {
+      "name": "qsdlc",
+      "source": ".",
+      "description": "Quintessence Software Development Lifecycle — Plan, Design, Build, Test, Deploy skills for structured AI-driven development."
+    }
+  ]
+}

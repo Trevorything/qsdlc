@@ -1,0 +1,9 @@
+{
+  "name": "qsdlc",
+  "description": "Quintessence Software Development Lifecycle — a 5-stage skill library (Plan, Design, Build, Test, Deploy) for directing AI models and subagents through feature work consistently.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Trevorything"
+  },
+  "homepage": "https://github.com/Trevorything/qsdlc"
+}
