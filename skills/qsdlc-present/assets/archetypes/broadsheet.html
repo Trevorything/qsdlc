@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="brand-source" content="unbranded">
+<meta name="color-scheme" content="light dark">
+<title>[PLACEHOLDER] Release notes — what shipped</title>
+<!-- how this was made: archetype=broadsheet (structure only; tokens come from brand-bind.json) -->
+<style id="tokens">
+/* unbranded placeholder — overwritten by brand-bind */
+:root{--bg:#f6f5f2;--surface:#fdfcfa;--panel:#ebe9e4;--line:#d4d1c9;--ink:#1d1c1a;--muted:#5c5a54;--hi:#0b6b6b;--ok:#2f6b2f;--alt:#8a5a00;--risk:#a8321f;
+--radius:2px;--border:1px;--font-display:ui-serif,serif;--font-sans:ui-sans-serif,system-ui,sans-serif;--font-mono:ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}}
+:root[data-theme="dark"]{--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}
+</style>
+<!-- qsdlc-present:start -->
+<!-- inline.mjs injects kit.css + kit.js (+ diagram.js / html-motion engines if rolled) here -->
+<!-- qsdlc-present:end -->
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);line-height:1.65}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;line-height:1.1}
+a{color:var(--hi)}
+:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+.sheet{max-width:70rem;margin:0 auto;padding:clamp(1.5rem,5vw,4rem) 16px;display:flex;flex-direction:column;gap:clamp(2rem,5vw,3.5rem)}
+header{display:flex;flex-direction:column;gap:1rem;border-bottom:var(--border) solid var(--line);padding-bottom:1.5rem}
+h1{font-size:clamp(2.2rem,6vw,4.2rem);max-width:18ch}
+.standfirst{font-size:clamp(1.1rem,2.2vw,1.45rem);max-width:46ch;color:var(--muted);margin:0}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 15rem;gap:2rem}
+.row p{max-width:68ch;margin:0 0 1rem}
+aside.side{border-left:2px solid var(--hi);padding-left:1rem;color:var(--muted);font-size:.9rem;align-self:start}
+.pull{display:flex;align-items:baseline;flex-wrap:wrap;gap:.5rem 1.25rem;padding:1.5rem 0;border-block:var(--border) solid var(--line)}
+.pull .numeral{font-size:clamp(3.5rem,10vw,7rem);color:var(--hi)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:1.5rem}
+.cols > div{border-top:2px solid var(--line);padding-top:.75rem}
+.cols h3{font-size:1.2rem;margin-bottom:.4rem}
+@media (max-width:48rem){.row{grid-template-columns:1fr;gap:.5rem}aside.side{align-self:auto}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}[data-reveal]{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+<main class="sheet">
+  <header data-reveal>
+    <p class="eyebrow">[PLACEHOLDER] Release notes · <time datetime="2026-01-01">date</time></p>
+    <h1>[PLACEHOLDER] One sentence naming what changed for the reader</h1>
+    <p class="standfirst">[PLACEHOLDER] Standfirst: why it matters, in plain language, written for the stakeholder not the engineer.</p>
+  </header>
+
+  <section class="row" data-reveal>
+    <div>
+      <h2>What changed</h2>
+      <p>[PLACEHOLDER] Lead with the outcome. Name the people it helps and the time or effort it returns. Claim only what the eval results support.</p>
+      <p>[PLACEHOLDER] Second paragraph: how it works from the user's side, no implementation detail.</p>
+    </div>
+    <aside class="side" aria-label="Margin note"><span class="eyebrow">Sidenote</span><br>[PLACEHOLDER] Context that would interrupt the main line: a definition, a caveat, a source.</aside>
+  </section>
+
+  <section class="pull" data-reveal aria-label="Headline number">
+    <span class="numeral" data-count="42" data-source="placeholder">42</span>
+    <p class="standfirst" style="max-width:34ch">[PLACEHOLDER] What the number measures, with its source. Label invented numbers as illustrative.</p>
+  </section>
+
+  <section data-reveal>
+    <h2 class="sr">Now, next, not yet</h2>
+    <div class="cols">
+      <div><h3>Now</h3><p>[PLACEHOLDER] Available today.</p></div>
+      <div><h3>Next</h3><p>[PLACEHOLDER] In progress, no date promised.</p></div>
+      <div><h3>Not yet</h3><p>[PLACEHOLDER] Honest scope: what this does not do.</p></div>
+    </div>
+  </section>
+</main>
+<script>if (window.Kit) Kit.init();</script>
+</body>
+</html>

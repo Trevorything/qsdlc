@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="en" data-deck="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="requires-js" content="canvas and WebGL demos; a noscript list names every engine">
+<title>html-motion engine gallery</title>
+<script>
+  /* Theme before first paint: ?deck=light|dark wins, else the system setting. */
+  (function () {
+    var d = new URLSearchParams(location.search).get('deck');
+    if (d !== 'light' && d !== 'dark') d = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-deck', d);
+  })();
+</script>
+<style>
+  /* The ten tokens engines read. Registered so a theme switch glides through the canvases. Neutral, unbranded. */
+  @property --bg      { syntax: '<color>'; inherits: true; initial-value: #101214; }
+  @property --surface { syntax: '<color>'; inherits: true; initial-value: #171a1d; }
+  @property --panel   { syntax: '<color>'; inherits: true; initial-value: #1f2327; }
+  @property --line    { syntax: '<color>'; inherits: true; initial-value: #2c3238; }
+  @property --ink     { syntax: '<color>'; inherits: true; initial-value: #e8eaec; }
+  @property --muted   { syntax: '<color>'; inherits: true; initial-value: #9aa3ab; }
+  @property --hi      { syntax: '<color>'; inherits: true; initial-value: #3fb8af; }
+  @property --ok      { syntax: '<color>'; inherits: true; initial-value: #5bbf7a; }
+  @property --alt     { syntax: '<color>'; inherits: true; initial-value: #e0a458; }
+  @property --risk    { syntax: '<color>'; inherits: true; initial-value: #e5645a; }
+  :root {
+    --bg: #101214; --surface: #171a1d; --panel: #1f2327; --line: #2c3238; --ink: #e8eaec; --muted: #9aa3ab;
+    --hi: #3fb8af; --ok: #5bbf7a; --alt: #e0a458; --risk: #e5645a;
+    --radius: 2px;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Liberation Mono", monospace;
+    transition: --bg .35s, --surface .35s, --panel .35s, --line .35s, --ink .35s, --muted .35s, --hi .35s, --ok .35s, --alt .35s, --risk .35s;
+  }
+  :root[data-deck="light"] {
+    --bg: #f6f5f2; --surface: #ffffff; --panel: #ecebe7; --line: #d5d3cd; --ink: #1c1f22; --muted: #5c646b;
+    --hi: #0f7d76; --ok: #2b7a47; --alt: #9a6a12; --risk: #b3372e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.5; }
+  header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+  h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  .eyebrow { font: 11px/1.2 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  nav { display: flex; gap: 12px; align-items: center; }
+  button, .btn { font: 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; cursor: pointer; text-decoration: none; }
+  button:hover, .btn:hover { border-color: var(--hi); }
+  button:active { background: var(--panel); }
+  :focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+  main { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 16px; padding: 24px; }
+  main.solo { grid-template-columns: minmax(0, 1100px); justify-content: center; }
+  article { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; min-width: 0; }
+  article[hidden] { display: none; }
+  .stage { position: relative; aspect-ratio: 16 / 9; background: var(--bg); border-bottom: 1px solid var(--line); overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .info { display: grid; gap: 6px; padding: 14px 16px 16px; }
+  h2 { margin: 0; font: 600 13px/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+  p { margin: 0; color: var(--muted); font-size: 14px; max-width: 60ch; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+  .tag { font: 11px/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 6px; }
+  #msg { padding: 0 24px; color: var(--risk); font: 13px var(--mono); }
+  @media (prefers-reduced-motion: reduce) { :root { transition: none; } * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="eyebrow">html-motion</div>
+    <h1>Engine gallery</h1>
+  </div>
+  <nav aria-label="Gallery controls">
+    <a class="btn" id="all" href="?" hidden>All engines</a>
+    <button id="theme" type="button" aria-pressed="false">Theme: dark</button>
+  </nav>
+</header>
+<div id="msg" role="status"></div>
+<main id="grid"></main>
+<noscript>
+  <section style="padding:1rem 1.5rem;max-width:60rem">
+    <h2>Engines</h2>
+    <p>The live engine demos are canvas and WebGL and need JavaScript. This is what each engine shows:</p>
+    <ul>
+    <li><strong>streams</strong>: Things moving at different rates (2D)</li>
+    <li><strong>graph</strong>: A network with travelers along its links (2D)</li>
+    <li><strong>expand</strong>: Reach growing around a fixed core (2D)</li>
+    <li><strong>pullback</strong>: One unit, then the whole grid, then work passing between (2D)</li>
+    <li><strong>split</strong>: One stream dividing into two branches (2D)</li>
+    <li><strong>transform</strong>: A familiar object becoming a larger version of itself (showpiece) (2D)</li>
+    <li><strong>morph</strong>: One passage of text becoming another, with lost words drifting off (2D)</li>
+    <li><strong>shader</strong>: A full-surface flowing field or contour map (GPU)</li>
+    <li><strong>terrain</strong>: A camera flying over a 3D landscape, with data columns and pinned labels (GPU)</li>
+    </ul>
+  </section>
+</noscript>
+
+<!-- html-motion:start engines=streams,graph,expand,pullback,split,transform,morph,shader,terrain -->
+<script>
+/* ---- _core.js ---- */
+/* html-motion core: shared runtime for every engine. Zero dependencies. Always inlined first.
+ *
+ * Contract (every engine):  const e = Engines.name(canvas, { W, H, ...options })
+ *                           -> { start, stop, redraw, drawAt, set, resize, destroy }
+ *   W, H     drawing space in CSS pixels (default: the canvas's client size). The backing store is W*res x H*res,
+ *            res = min(devicePixelRatio, 2) (governor may lower it). Inline size is set to W x H px unless css:false.
+ *   start()  runs the loop. Under prefers-reduced-motion it paints one COMPLETE final frame and does not loop.
+ *   stop()   cancels the loop (the last frame stays on the canvas).
+ *   redraw() repaints the current frame; call after a theme or token change.
+ *   drawAt(t) paints the frame for t seconds. Exact for "pure" engines; stateful engines replay a seeded
+ *            simulation from 0 in 1/30 s steps, so the same t gives the same frame.
+ *   set(obj) changes options live (engines read options every frame where noted in their header).
+ *   A draw function may return 'freeze' to end its own loop; the last frame stays.
+ *
+ * Common options: loop (pure engines restart after dur+hold), dur, hold (s, default .6), bg (true or token: paint
+ *   a background), dpr (cap, <= 2), quality (GPU resolution multiplier), css (false: page sizes the canvas), seed.
+ *
+ * Tokens. Engines read colours BY NAME from :root on every draw, so a CSS transition on a registered @property
+ * glides through the canvas with no restart. A page MUST define all ten (below). If one is missing the engine
+ * falls back to the neutral defaults in Engines.core.defaults so it still renders, but the colours will not be yours.
+ *   --bg --surface --panel --line --ink --muted --hi --ok --alt --risk
+ * <html data-deck="dark|light"> selects the theme engines blend for (glow add vs. normal). Absent: system theme.
+ *
+ * Globals:  Engines.maxFps (default 60)  cap for pages that run for hours, e.g. 30.
+ *           Engines.noGovernor (false)   set true if the page paces a GPU engine itself with drawAt(t).
+ * URL:      ?fps=1 frame-rate readout   ?gov=off disable the governor (for testing).
+ * Governor (GPU engines only): if ~45 consecutive frames average slower than 20 fps, halve resolution; if still
+ *   slow, freeze on the last frame. Without WebGL (or on compile/context loss) the canvas gets a still gradient
+ *   built from the tokens (data-fallback="still").
+ */
+(function () {
+  'use strict';
+  var G = window, E = G.Engines = G.Engines || {};
+  var Q = new URLSearchParams(location.search);
+  if (E.maxFps == null) E.maxFps = 60;
+  if (E.noGovernor == null) E.noGovernor = false;
+
+  var TOKENS = ['--bg', '--surface', '--panel', '--line', '--ink', '--muted', '--hi', '--ok', '--alt', '--risk'];
+  // Neutral, unbranded fallbacks only. Real pages define their own tokens (see qsdlc-present brand binding).
+  var DEFAULTS = {
+    dark:  { '--bg': '#101214', '--surface': '#171a1d', '--panel': '#1f2327', '--line': '#2c3238', '--ink': '#e8eaec',
+             '--muted': '#9aa3ab', '--hi': '#3fb8af', '--ok': '#5bbf7a', '--alt': '#e0a458', '--risk': '#e5645a' },
+    light: { '--bg': '#f6f5f2', '--surface': '#ffffff', '--panel': '#ecebe7', '--line': '#d5d3cd', '--ink': '#1c1f22',
+             '--muted': '#5c646b', '--hi': '#0f7d76', '--ok': '#2b7a47', '--alt': '#9a6a12', '--risk': '#b3372e' }
+  };
+  var core = E.core = { tokens: TOKENS, defaults: DEFAULTS, frames: 0 };
+
+  // ---- small math helpers -------------------------------------------------------------------------------
+  core.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+  core.lerp = function (a, b, k) { return a + (b - a) * k; };
+  core.smooth = function (a, b, x) { var k = core.clamp((x - a) / (b - a || 1), 0, 1); return k * k * (3 - 2 * k); };
+  core.ease = function (k) { k = core.clamp(k, 0, 1); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+  core.rng = function (s) { // mulberry32: deterministic, so drawAt(t) is repeatable
+    s = (s >>> 0) || 1;
+    return function () {
+      s = (s + 0x6D2B79F5) >>> 0; var t = s;
+      t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  };
+  core.theme = function () {
+    var d = document.documentElement.getAttribute('data-deck');
+    if (d === 'light' || d === 'dark') return d;
+    return G.matchMedia && G.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  };
+  core.reduced = function () { return !!(G.matchMedia && G.matchMedia('(prefers-reduced-motion: reduce)').matches); };
+
+  // ---- colour parsing (any CSS colour the canvas understands -> [r,g,b]) --------------------------------
+  var cc = document.createElement('canvas').getContext('2d'), memo = {};
+  function parse(v, fb) {
+    v = (v || '').trim();
+    if (!v) return fb;
+    if (memo[v]) return memo[v];
+    cc.fillStyle = '#010203'; cc.fillStyle = v;
+    var s = cc.fillStyle, out;
+    if (s === '#010203' && v.replace(/\s/g, '').toLowerCase() !== '#010203') return fb; // not a colour
+    if (s.charAt(0) === '#') out = [parseInt(s.substr(1, 2), 16), parseInt(s.substr(3, 2), 16), parseInt(s.substr(5, 2), 16)];
+    else { var m = s.match(/[\d.]+/g); out = [+m[0], +m[1], +m[2]]; }
+    return (memo[v] = out);
+  }
+  function Env(W, H) {
+    var cs = getComputedStyle(document.documentElement), th = core.theme(), d = DEFAULTS[th];
+    this.W = W; this.H = H; this.dark = th === 'dark'; this.c = {};
+    for (var i = 0; i < TOKENS.length; i++) this.c[TOKENS[i]] = parse(cs.getPropertyValue(TOKENS[i]), parse(d[TOKENS[i]]));
+  }
+  var P = Env.prototype;
+  P.arr = function (t) { // token name ('--hi' or 'hi') or any CSS colour -> [r,g,b] 0..255
+    if (this.c[t]) return this.c[t];
+    var n = t.charAt(0) === '-' ? t : '--' + t;
+    return this.c[n] || parse(t, this.c['--ink']);
+  };
+  P.f = function (t) { var c = this.arr(t); return [c[0] / 255, c[1] / 255, c[2] / 255]; }; // 0..1 for GL uniforms
+  P.rgb = function (t) { var c = this.arr(t); return 'rgb(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ')'; };
+  P.a = function (t, al) { var c = this.arr(t); return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + core.clamp(al, 0, 1) + ')'; };
+  P.mix = function (t1, t2, k, al) {
+    var a = this.arr(t1), b = this.arr(t2);
+    return 'rgba(' + Math.round(a[0] + (b[0] - a[0]) * k) + ',' + Math.round(a[1] + (b[1] - a[1]) * k) + ',' +
+      Math.round(a[2] + (b[2] - a[2]) * k) + ',' + (al == null ? 1 : core.clamp(al, 0, 1)) + ')';
+  };
+  P.glow = function () { return this.dark ? 'lighter' : 'source-over'; }; // additive glow on dark, plain on light
+  core.env = function (W, H) { return new Env(W, H); };
+
+  // ---- still fallback (no WebGL, shader compile error, lost context) -------------------------------------
+  core.still = function (canvas, e) {
+    canvas.style.background = 'radial-gradient(120% 90% at 30% 20%,' + e.a('--hi', .35) + ',transparent 60%),' +
+      'linear-gradient(' + e.rgb('--surface') + ',' + e.rgb('--bg') + ')';
+    canvas.setAttribute('data-fallback', 'still');
+  };
+
+  // ---- WebGL helpers --------------------------------------------------------------------------------------
+  core.gl = {
+    program: function (gl, vs, fs, attrs) { // attrs: attribute names, bound to locations 0,1,2...
+      function sh(type, src) {
+        var h = gl.createShader(type); gl.shaderSource(h, src); gl.compileShader(h);
+        if (!gl.getShaderParameter(h, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(h));
+        return h;
+      }
+      var p = gl.createProgram();
+      gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+      (attrs || []).forEach(function (n, i) { gl.bindAttribLocation(p, i, n); });
+      gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+      return p;
+    }
+  };
+
+  // ---- ?fps=1 readout (one shared element, counts paints across all engines) ------------------------------
+  var fpsEl = null;
+  function fpsInit() {
+    if (fpsEl || Q.get('fps') !== '1' || !document.body) return;
+    fpsEl = document.createElement('div'); fpsEl.setAttribute('data-hm-fps', '');
+    fpsEl.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99999;font:11px/1.2 ui-monospace,Consolas,monospace;' +
+      'padding:3px 6px;background:rgba(0,0,0,.7);color:#fff;pointer-events:none';
+    document.body.appendChild(fpsEl);
+    var n0 = 0, t0 = performance.now();
+    setInterval(function () {
+      var now = performance.now();
+      fpsEl.textContent = Math.round((core.frames - n0) * 1000 / (now - t0)) + ' fps';
+      n0 = core.frames; t0 = now;
+    }, 500);
+  }
+
+  // ---- the engine factory ----------------------------------------------------------------------------------
+  // spec: { pure, gpu, gl, dur, init(g,e,st), draw(g,e,st) -> 'freeze'|undefined, destroy() }
+  // `e` is the per-frame env: W H t dt p(progress, pure engines with dur) dark o(options) + colour helpers.
+  core.make = function (canvas, o, spec) {
+    o = o || {};
+    var self = { canvas: canvas, opts: o }, g = null, ok = false, inited = false, st = {};
+    var W = o.W || canvas.clientWidth || canvas.width || 300, H = o.H || canvas.clientHeight || canvas.height || 150;
+    var dprCap = Math.min(o.dpr || G.devicePixelRatio || 1, 2), scale = 1, res = 1, slow = 0, win = [];
+    var raf = 0, running = false, tNow = 0, lastTs = 0, lastPaint = 0, vis = true, io = null;
+
+    function dur() { return typeof spec.dur === 'function' ? spec.dur(o) : spec.dur; }
+    function hold() { return o.hold != null ? o.hold : .6; }
+    function size() {
+      res = core.clamp(dprCap * scale * (spec.gl ? (o.quality || 1) : 1), .25, 2);
+      canvas.width = Math.max(1, Math.round(W * res)); canvas.height = Math.max(1, Math.round(H * res));
+      if (o.css !== false) { canvas.style.width = W + 'px'; canvas.style.height = H + 'px'; }
+    }
+    function mk(t, dt) {
+      var e = new Env(W, H); e.t = t; e.dt = dt; e.res = res; e.o = o; e.canvas = canvas;
+      if (spec.dur) { var d = dur(); e.p = o.loop ? Math.min(1, (t % (d + hold())) / d) : Math.min(1, t / d); }
+      return e;
+    }
+    function ensure() {
+      if (inited) return; inited = true; fpsInit();
+      if (spec.gl) {
+        try { g = canvas.getContext('webgl', { antialias: false, alpha: true, premultipliedAlpha: true }) || canvas.getContext('experimental-webgl'); }
+        catch (x) { g = null; }
+        ok = !!g;
+        if (g) canvas.addEventListener('webglcontextlost', function (ev) { ev.preventDefault(); ok = false; stop(); core.still(canvas, mk(0, 0)); });
+      } else { g = canvas.getContext('2d'); ok = !!g; }
+      size();
+      if (ok) { try { if (spec.init) spec.init(g, mk(0, 0), st); } catch (x) { console.warn('html-motion: init failed, using still fallback.', x.message); ok = false; } }
+      if (!ok) core.still(canvas, mk(0, 0));
+    }
+    function paint(t, dt) {
+      ensure();
+      if (!ok) { core.still(canvas, mk(t, dt)); return 'still'; }
+      var e = mk(t, dt);
+      if (!spec.gl) {
+        g.setTransform(res, 0, 0, res, 0, 0); g.clearRect(0, 0, W, H);
+        if (o.bg) { g.fillStyle = e.rgb(o.bg === true ? '--bg' : o.bg); g.fillRect(0, 0, W, H); }
+      }
+      var r = spec.draw(g, e, st);
+      core.frames++;
+      if (spec.pure && spec.dur && !o.loop && t >= dur() + hold()) r = 'freeze';
+      return r;
+    }
+    function stop() { running = false; if (raf) cancelAnimationFrame(raf); raf = 0; }
+    function tick(ts) {
+      if (!running) return;
+      raf = requestAnimationFrame(tick);
+      if (document.hidden || !vis) { lastTs = 0; lastPaint = 0; return; }
+      var raw = lastTs ? ts - lastTs : 0; lastTs = ts;
+      if (spec.gpu && !E.noGovernor && Q.get('gov') !== 'off' && raw > 0 && raw < 250) {
+        win.push(raw);
+        if (win.length >= 45) {
+          var avg = win.reduce(function (a, b) { return a + b; }, 0) / win.length; win = [];
+          if (avg > 45) {
+            if (++slow === 1) { scale = .5; size(); console.info('html-motion governor: resolution halved'); }
+            else { console.info('html-motion governor: froze on last frame'); stop(); return; }
+          }
+        }
+      }
+      var min = 1000 / Math.max(1, E.maxFps);
+      if (lastPaint && ts - lastPaint < min - 1.5) return;
+      var dt = lastPaint ? Math.min((ts - lastPaint) / 1000, .1) : 0;
+      lastPaint = ts; tNow += dt;
+      if (paint(tNow, dt) === 'freeze') stop();
+    }
+    function settle() { // one complete final frame (reduced motion, or a still render)
+      if (spec.pure) self.drawAt(spec.dur ? dur() : (o.still != null ? o.still : 6));
+      else self.drawAt(o.warm != null ? o.warm : (spec.dur ? dur() + 2 : 4));
+    }
+
+    self.start = function () {
+      ensure();
+      if (running) return self;
+      if (core.reduced()) { settle(); return self; }
+      running = true; lastTs = 0; lastPaint = 0;
+      if (!io && 'IntersectionObserver' in G) { io = new IntersectionObserver(function (en) { vis = en[en.length - 1].isIntersecting; }); io.observe(canvas); }
+      raf = requestAnimationFrame(tick);
+      return self;
+    };
+    self.stop = function () { stop(); return self; };
+    self.redraw = function () { paint(tNow, 0); return self; };
+    self.drawAt = function (t) {
+      ensure(); tNow = t;
+      if (spec.pure || spec.gl || !ok) { paint(t, 0); return self; }
+      st = {}; if (spec.init) spec.init(g, mk(0, 0), st);
+      var n = Math.min(900, Math.ceil(t * 30));
+      if (n < 1) { paint(0, 0); return self; }
+      for (var i = 1; i <= n; i++) paint(i / 30, 1 / 30);
+      return self;
+    };
+    self.set = function (patch) { for (var k in patch) o[k] = patch[k]; return self; };
+    self.resize = function (w, h) { W = w; H = h; if (inited) { size(); self.redraw(); } return self; };
+    self.destroy = function () { stop(); if (io) io.disconnect(); if (spec.destroy) spec.destroy(st); };
+
+    var mq = G.matchMedia && G.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq && mq.addEventListener) mq.addEventListener('change', function () { if (mq.matches && running) { stop(); settle(); } });
+    return self;
+  };
+})();
+/* ---- streams.js ---- */
+/* html-motion engine: streams. Things moving at different rates (speed = rate). 2D, stateful (seeded).
+ * Engines.streams(canvas, { W, H, ...options })
+ * Options:
+ *   lanes 6          number of parallel lanes; lane i runs at a rate between speed[0] and speed[1]
+ *   count 90         particles in total, spread across lanes
+ *   speed [40,220]   px per second, slowest to fastest lane (live: speedScale multiplies it, set({speedScale:.3}))
+ *   colors ['--hi','--alt','--ok']   token names, one per lane group
+ *   dir 'x'|'y'      flow direction
+ *   trail 14         trail length at 100 px/s, in px
+ *   size 1           particle size multiplier (use 1.8 or more for wall displays)
+ *   seed 7  bg false
+ */
+(function () {
+  var core = Engines.core;
+  Engines.streams = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: false,
+      init: function (g, e, s) {
+        var r = core.rng(o.seed || 7), n = o.count || 90, L = o.lanes || 6, sp = o.speed || [40, 220];
+        s.p = [];
+        for (var i = 0; i < n; i++) {
+          var lane = i % L;
+          s.p.push({ lane: lane, u: r(), v: core.lerp(sp[0], sp[1], L > 1 ? lane / (L - 1) : .5) * (.85 + r() * .3), z: 1 + r() * 1.6 });
+        }
+      },
+      draw: function (g, e, s) {
+        var L = o.lanes || 6, cols = o.colors || ['--hi', '--alt', '--ok'], y = o.dir === 'y', trail = o.trail || 14, sz = o.size || 1;
+        var len = y ? e.H : e.W, span = y ? e.W : e.H, k = o.speedScale == null ? 1 : o.speedScale;
+        var pos = function (lane) { return span * .12 + (span * .76) * (L > 1 ? lane / (L - 1) : .5); };
+        g.lineWidth = 1; g.strokeStyle = e.a('--line', .7);
+        for (var l = 0; l < L; l++) {
+          var q = pos(l); g.beginPath();
+          if (y) { g.moveTo(q, 0); g.lineTo(q, len); } else { g.moveTo(0, q); g.lineTo(len, q); }
+          g.stroke();
+        }
+        g.globalCompositeOperation = e.glow(); g.lineCap = 'round';
+        for (var i = 0; i < s.p.length; i++) {
+          var p = s.p[i]; p.u = (p.u + p.v * k * e.dt / len) % 1;
+          var a = p.u * len, b = pos(p.lane), tl = trail * (p.v * k / 100) + 2, col = cols[p.lane % cols.length];
+          g.strokeStyle = e.a(col, .55); g.lineWidth = p.z * sz;
+          g.beginPath();
+          if (y) { g.moveTo(b, a - tl); g.lineTo(b, a); } else { g.moveTo(a - tl, b); g.lineTo(a, b); }
+          g.stroke();
+          g.fillStyle = e.rgb(col); g.beginPath(); g.arc(y ? b : a, y ? a : b, p.z * .9 * sz, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+      }
+    });
+  };
+})();
+/* ---- graph.js ---- */
+/* html-motion engine: graph. A network with travelers along its links (a traveler = one unit of work or data
+ * moving between nodes; a node pulses when one arrives). 2D, stateful (seeded).
+ * Engines.graph(canvas, { W, H, ...options })
+ * Options:
+ *   nodes 14 | [{x,y,r?,c?}]   count (auto-laid out, deterministic) or explicit nodes in drawing space (c = token)
+ *   links 1.5 | [[a,b],...]    average links per node, or explicit index pairs
+ *   travelers 18               travelers in flight (live)
+ *   speed 90                   px per second (live: speedScale)
+ *   hubs 2                     the first N auto nodes are drawn larger
+ *   colors ['--hi','--alt','--ok']   token names for travelers
+ *   seed 11  bg false
+ */
+(function () {
+  var core = Engines.core;
+  Engines.graph = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: false,
+      init: function (g, e, s) {
+        var r = core.rng(o.seed || 11), W = e.W, H = e.H, N, i, j;
+        if (Array.isArray(o.nodes)) {
+          s.n = o.nodes.map(function (n) { return { x: n.x, y: n.y, r: n.r || 5, c: n.c, pulse: 0 }; });
+        } else {
+          N = o.nodes || 14; s.n = [];
+          var hubs = o.hubs == null ? 2 : o.hubs;
+          for (i = 0; i < N; i++) s.n.push({ x: W * (.1 + .8 * r()), y: H * (.12 + .76 * r()), r: i < hubs ? 8 : 4.5, pulse: 0 });
+          for (var it = 0; it < 60; it++) // relax: push overlapping nodes apart
+            for (i = 0; i < N; i++) for (j = i + 1; j < N; j++) {
+              var dx = s.n[j].x - s.n[i].x, dy = s.n[j].y - s.n[i].y, d = Math.hypot(dx, dy) || 1, m = Math.min(W, H) * .2;
+              if (d < m) { var f = (m - d) / d * .25; s.n[i].x -= dx * f; s.n[i].y -= dy * f; s.n[j].x += dx * f; s.n[j].y += dy * f; }
+              s.n[i].x = core.clamp(s.n[i].x, W * .06, W * .94); s.n[i].y = core.clamp(s.n[i].y, H * .08, H * .92);
+            }
+        }
+        N = s.n.length; s.l = [];
+        if (Array.isArray(o.links)) {
+          s.l = o.links.map(function (p) { return [p[0], p[1]]; });
+        } else { // each node links to its nearest neighbours, up to the requested density
+          var want = Math.round(N * (o.links || 1.5)), seen = {};
+          for (var k = 0; k < 3 && s.l.length < want; k++) for (i = 0; i < N && s.l.length < want; i++) {
+            var ds = s.n.map(function (n, q) { return [q, Math.hypot(n.x - s.n[i].x, n.y - s.n[i].y)]; })
+              .filter(function (z) { return z[0] !== i; }).sort(function (a, b) { return a[1] - b[1]; });
+            if (!ds[k]) continue;
+            var q = ds[k][0], key = Math.min(i, q) + '-' + Math.max(i, q);
+            if (!seen[key]) { seen[key] = 1; s.l.push([i, q]); }
+          }
+        }
+        s.t = []; s.r = r;
+      },
+      draw: function (g, e, s) {
+        var cols = o.colors || ['--hi', '--alt', '--ok'], want = o.travelers == null ? 18 : o.travelers;
+        var sp = (o.speed || 90) * (o.speedScale == null ? 1 : o.speedScale);
+        g.lineWidth = 1; g.strokeStyle = e.a('--line', .9);
+        s.l.forEach(function (l) { var a = s.n[l[0]], b = s.n[l[1]]; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); });
+        while (s.t.length < want && s.l.length) {
+          s.t.push({ l: Math.floor(s.r() * s.l.length), u: 0, fw: s.r() < .5, c: Math.floor(s.r() * cols.length), v: .8 + s.r() * .5 });
+        }
+        s.t.length = Math.min(s.t.length, want);
+        g.globalCompositeOperation = e.glow();
+        for (var i = 0; i < s.t.length; i++) {
+          var t = s.t[i], l = s.l[t.l], from = t.fw ? l[0] : l[1], to = t.fw ? l[1] : l[0];
+          var a = s.n[from], b = s.n[to], d = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+          t.u += sp * t.v * e.dt / d;
+          if (t.u >= 1) { // arrived: pulse the node, continue along a random link from it
+            b.pulse = 1;
+            var nl = [];
+            for (var q = 0; q < s.l.length; q++) if (s.l[q][0] === to || s.l[q][1] === to) nl.push(q);
+            t.l = nl[Math.floor(s.r() * nl.length)]; t.fw = s.l[t.l][0] === to; t.u = 0;
+            t.c = Math.floor(s.r() * cols.length);
+            continue;
+          }
+          var x = a.x + (b.x - a.x) * t.u, y = a.y + (b.y - a.y) * t.u, col = cols[t.c % cols.length];
+          g.fillStyle = e.a(col, .25); g.beginPath(); g.arc(x, y, 6, 0, 6.2832); g.fill();
+          g.fillStyle = e.rgb(col); g.beginPath(); g.arc(x, y, 2.2, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+        s.n.forEach(function (n) {
+          n.pulse = Math.max(0, n.pulse - e.dt * 2.2);
+          g.fillStyle = e.rgb('--panel'); g.strokeStyle = e.mix('--line', n.c || '--hi', .35 + n.pulse * .65); g.lineWidth = 1.5;
+          g.beginPath(); g.arc(n.x, n.y, n.r + n.pulse * 3, 0, 6.2832); g.fill(); g.stroke();
+        });
+      }
+    });
+  };
+})();
+/* ---- expand.js ---- */
+/* html-motion engine: expand. Reach growing around a fixed core (a front sweeps outward and lights up the points
+ * it passes). 2D, PURE function of time: drawAt(t) is exact, so it suits recordings and identical-every-load pages.
+ * Engines.expand(canvas, { W, H, ...options })
+ * Options:
+ *   dur 4        seconds to reach full extent (then holds .6 s and 'freeze'; loop:true repeats)
+ *   rings 4      concentric tiers
+ *   points 160   points that light up as the front passes (seeded scatter)
+ *   maxR .46     final radius as a fraction of min(W,H)
+ *   cx, cy       centre in drawing space (default middle)
+ *   label ''     optional short text under the core
+ *   colors ['--hi','--alt','--ok']   token names by tier
+ *   seed 5
+ */
+(function () {
+  var core = Engines.core;
+  Engines.expand = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: true, dur: function (op) { return op.dur || 4; },
+      init: function (g, e, s) {
+        var r = core.rng(o.seed || 5), n = o.points || 160; s.p = [];
+        for (var i = 0; i < n; i++) s.p.push({ a: r() * 6.2832, d: Math.sqrt(.04 + r() * .96), z: .8 + r() * 1.8 });
+      },
+      draw: function (g, e, s) {
+        var cx = o.cx == null ? e.W / 2 : o.cx, cy = o.cy == null ? e.H / 2 : o.cy, R = (o.maxR || .46) * Math.min(e.W, e.H);
+        var cols = o.colors || ['--hi', '--alt', '--ok'], rings = o.rings || 4, k = core.ease(e.p), front = k * R, i;
+        g.globalCompositeOperation = e.glow();
+        g.lineWidth = 1;
+        for (i = 1; i <= rings; i++) { // guide rings; each brightens once the front has passed it
+          var rr = R * i / rings, on = core.smooth(rr - R / rings, rr, front);
+          g.setLineDash([2, 6]); g.strokeStyle = e.a(on > 0 ? cols[(i - 1) % cols.length] : '--line', .25 + .55 * on);
+          g.beginPath(); g.arc(cx, cy, rr, 0, 6.2832); g.stroke();
+        }
+        g.setLineDash([]);
+        g.strokeStyle = e.a('--hi', .7 * (1 - k) + .2); g.lineWidth = 2;
+        g.beginPath(); g.arc(cx, cy, Math.max(front, 2), 0, 6.2832); g.stroke();
+        for (i = 0; i < s.p.length; i++) {
+          var p = s.p[i], d = p.d * R, lit = core.smooth(d - 18, d + 4, front);
+          if (lit <= 0) continue;
+          var tier = Math.min(rings - 1, Math.floor(p.d * rings));
+          g.fillStyle = e.a(cols[tier % cols.length], .25 + .75 * lit);
+          g.beginPath(); g.arc(cx + Math.cos(p.a) * d, cy + Math.sin(p.a) * d, p.z * (.6 + .4 * lit), 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+        g.fillStyle = e.rgb('--panel'); g.strokeStyle = e.rgb('--hi'); g.lineWidth = 2;
+        g.beginPath(); g.arc(cx, cy, 9, 0, 6.2832); g.fill(); g.stroke();
+        if (o.label) { g.fillStyle = e.rgb('--muted'); g.font = '12px ui-monospace,Consolas,monospace'; g.textAlign = 'center'; g.fillText(o.label, cx, cy + 28); }
+      }
+    });
+  };
+})();
+/* ---- pullback.js ---- */
+/* html-motion engine: pullback. One unit fills the frame, the camera pulls back to reveal the whole grid it belongs
+ * to, then work passes between the units. 2D, stateful: the pullback is a function of time, the travelers after it
+ * are a seeded simulation (drawAt(t) replays it).
+ * Engines.pullback(canvas, { W, H, ...options })
+ * Options:
+ *   dur 5        seconds for the pullback (travelers keep running afterwards; no freeze)
+ *   cols 9 rows 5   grid size (odd numbers keep the first unit centred)
+ *   travelers 12 travelers passing between neighbouring units after the reveal (live)
+ *   label ''     short text inside the first unit
+ *   colors ['--alt','--ok']   token names for travelers
+ *   seed 3
+ */
+(function () {
+  var core = Engines.core;
+  Engines.pullback = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: false, dur: function (op) { return op.dur || 5; },
+      init: function (g, e, s) { s.r = core.rng(o.seed || 3); s.t = []; },
+      draw: function (g, e, s) {
+        var C = o.cols || 9, R = o.rows || 5, cs = Math.min(e.W / (C + 1), e.H / (R + 1)) * .92, gap = cs * .22, pitch = cs + gap;
+        var gw = C * pitch - gap, gh = R * pitch - gap, mc = Math.floor(C / 2), mr = Math.floor(R / 2);
+        var k = core.ease(e.p), z0 = (e.H * .62) / cs, z = core.lerp(z0, 1, k);
+        var cx0 = mc * pitch + cs / 2, cy0 = mr * pitch + cs / 2, gcx = gw / 2, gcy = gh / 2;
+        var camX = core.lerp(cx0, gcx, k), camY = core.lerp(cy0, gcy, k);
+        var cols = o.colors || ['--alt', '--ok'], i, j;
+        g.save(); g.translate(e.W / 2, e.H / 2); g.scale(z, z); g.translate(-camX, -camY);
+        for (j = 0; j < R; j++) for (i = 0; i < C; i++) {
+          var x = i * pitch, y = j * pitch, centre = i === mc && j === mr;
+          var dn = Math.hypot(i - mc, j - mr) / Math.hypot(mc, mr || 1);
+          var vis = centre ? 1 : core.smooth(.05 + .65 * dn, .3 + .65 * dn, k);
+          if (vis <= 0) continue;
+          g.globalAlpha = vis;
+          g.fillStyle = e.rgb(centre ? '--panel' : '--surface'); g.fillRect(x, y, cs, cs);
+          g.strokeStyle = e.rgb(centre ? '--hi' : '--line'); g.lineWidth = (centre ? 2 : 1) / z; g.strokeRect(x + .5 / z, y + .5 / z, cs - 1 / z, cs - 1 / z);
+          g.fillStyle = e.a(centre ? '--hi' : '--muted', centre ? .6 : .3); // a few "content" bars inside each unit
+          for (var b = 0; b < 3; b++) g.fillRect(x + cs * .14, y + cs * (.2 + b * .17), cs * (.72 - b * .17), cs * .06);
+          g.globalAlpha = 1;
+        }
+        if (o.label && e.p < .98) {
+          g.fillStyle = e.a('--ink', 1 - core.smooth(.4, .8, e.p)); g.font = '600 ' + (cs * .12) + 'px ui-sans-serif,system-ui,sans-serif';
+          g.textAlign = 'center'; g.fillText(o.label, mc * pitch + cs / 2, mr * pitch + cs * .92);
+        }
+        var want = k > .85 ? (o.travelers == null ? 12 : o.travelers) : 0;
+        while (s.t.length < want) {
+          var ax = Math.floor(s.r() * C), ay = Math.floor(s.r() * R), horiz = s.r() < .6;
+          var bx = core.clamp(ax + (horiz ? (s.r() < .5 ? -1 : 1) : 0), 0, C - 1), by = core.clamp(ay + (horiz ? 0 : (s.r() < .5 ? -1 : 1)), 0, R - 1);
+          if (ax === bx && ay === by) continue;
+          s.t.push({ ax: ax, ay: ay, bx: bx, by: by, u: 0, v: .5 + s.r() * .6, c: Math.floor(s.r() * cols.length) });
+        }
+        s.t.length = Math.min(s.t.length, want);
+        g.globalCompositeOperation = e.glow();
+        for (var q = 0; q < s.t.length; q++) {
+          var t = s.t[q]; t.u += t.v * e.dt;
+          if (t.u >= 1) { s.t.splice(q, 1); q--; continue; }
+          var px = core.lerp(t.ax, t.bx, t.u) * pitch + cs / 2, py = core.lerp(t.ay, t.by, t.u) * pitch + cs / 2;
+          g.fillStyle = e.a(cols[t.c % cols.length], .3); g.beginPath(); g.arc(px, py, cs * .09, 0, 6.2832); g.fill();
+          g.fillStyle = e.rgb(cols[t.c % cols.length]); g.beginPath(); g.arc(px, py, cs * .035, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+        g.restore();
+      }
+    });
+  };
+})();
+/* ---- split.js ---- */
+/* html-motion engine: split. One stream divides into two branches (a decision, a triage, a fork in the work).
+ * 2D, stateful (seeded). The share going to each branch is live: set({ ratio: .3 }).
+ * Engines.split(canvas, { W, H, ...options })
+ * Options:
+ *   ratio .5       share of particles taking the upper branch (0..1, live)
+ *   count 70       particles in flight
+ *   speed 140      px per second (live: speedScale)
+ *   colors ['--hi','--ok','--alt']   token names: trunk, upper branch, lower branch
+ *   labels ['','']   short text at the end of each branch
+ *   seed 9  bg false
+ */
+(function () {
+  var core = Engines.core, SPLIT = .38;
+  function pt(W, H, branch, u) { // point on the trunk (u < SPLIT) or the chosen branch
+    var x0 = W * .08, xs = W * .46, y0 = H / 2;
+    if (u < SPLIT) return [core.lerp(x0, xs, u / SPLIT), y0];
+    var t = (u - SPLIT) / (1 - SPLIT), ye = branch === 0 ? H * .28 : H * .72, x1 = W * .62, x2 = W * .72, xe = W * .92, m = 1 - t;
+    return [m * m * m * xs + 3 * m * m * t * x1 + 3 * m * t * t * x2 + t * t * t * xe, m * m * m * y0 + 3 * m * m * t * y0 + 3 * m * t * t * ye + t * t * t * ye];
+  }
+  Engines.split = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: false,
+      init: function (g, e, s) {
+        var r = core.rng(o.seed || 9); s.r = r; s.p = [];
+        for (var i = 0; i < (o.count || 70); i++) s.p.push({ u: r(), b: r() < (o.ratio == null ? .5 : o.ratio) ? 0 : 1, v: .8 + r() * .5, z: 1.2 + r() * 1.3 });
+      },
+      draw: function (g, e, s) {
+        var cols = o.colors || ['--hi', '--ok', '--alt'], sp = (o.speed || 140) * (o.speedScale == null ? 1 : o.speedScale), ratio = o.ratio == null ? .5 : o.ratio;
+        var L = e.W * .9, i, u;
+        g.lineCap = 'round'; g.lineJoin = 'round';
+        [0, 1].forEach(function (b) { // channels
+          g.beginPath(); for (u = 0; u <= 1.001; u += .02) { var p = pt(e.W, e.H, b, u); if (u === 0) g.moveTo(p[0], p[1]); else g.lineTo(p[0], p[1]); }
+          g.strokeStyle = e.a('--line', .55); g.lineWidth = 14; g.stroke();
+          g.strokeStyle = e.a('--surface', 1); g.lineWidth = 12; g.stroke();
+        });
+        g.globalCompositeOperation = e.glow();
+        for (i = 0; i < s.p.length; i++) {
+          var q = s.p[i]; q.u += sp * q.v * e.dt / L;
+          if (q.u >= 1) { q.u = 0; q.b = s.r() < ratio ? 0 : 1; }
+          var a = pt(e.W, e.H, q.b, q.u), col = q.u < SPLIT ? cols[0] : cols[1 + q.b], lat = (i % 5 - 2) * 1.6 * (q.u < SPLIT ? 1 : 1 - (q.u - SPLIT));
+          g.fillStyle = e.a(col, .3); g.beginPath(); g.arc(a[0], a[1] + lat, q.z * 2.6, 0, 6.2832); g.fill();
+          g.fillStyle = e.rgb(col); g.beginPath(); g.arc(a[0], a[1] + lat, q.z, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+        var ls = o.labels || ['', ''];
+        g.font = '12px ui-monospace,Consolas,monospace'; g.textAlign = 'right'; g.fillStyle = e.rgb('--muted');
+        if (ls[0]) g.fillText(ls[0], e.W * .92, e.H * .28 - 14);
+        if (ls[1]) g.fillText(ls[1], e.W * .92, e.H * .72 + 24);
+      }
+    });
+  };
+})();
+/* ---- transform.js ---- */
+/* html-motion engine: transform. A familiar object becomes a larger version of itself, built from copies of itself
+ * (a sheet of paper whose every line turns out to be a sheet). Showpiece. 2D, PURE function of time.
+ * Engines.transform(canvas, { W, H, ...options })
+ * Options:
+ *   dur 5        seconds for the transformation (then holds .6 s and 'freeze'; loop:true repeats)
+ *   rows 4       lines on the sheet; the large sheet is a rows x cols grid of small sheets
+ *   cols 3
+ *   scale 3.2    how much larger the final sheet is than the first (capped so it always fits the frame)
+ *   label ''     short caption under the sheet (fades in at the end)
+ *   color '--hi' token for the accent line
+ */
+(function () {
+  var core = Engines.core;
+  Engines.transform = function (canvas, o) {
+    o = o || {};
+    function sheet(g, e, x, y, w, h, rows, k, accent) { // k = 0 plain rule lines .. 1 fully drawn
+      g.fillStyle = e.rgb('--panel'); g.fillRect(x, y, w, h);
+      g.strokeStyle = e.rgb(accent ? o.color || '--hi' : '--line'); g.lineWidth = accent ? 2 : 1; g.strokeRect(x + .5, y + .5, w - 1, h - 1);
+      g.fillStyle = e.a(accent ? o.color || '--hi' : '--muted', .75); g.fillRect(x + w * .1, y + h * .09, w * .42, h * .05); // title bar
+      for (var i = 0; i < rows; i++) { g.fillStyle = e.a('--muted', .35 * k + .1); g.fillRect(x + w * .1, y + h * (.24 + i * (.62 / rows)), w * (.8 - (i % 3) * .14), h * .035); }
+    }
+    return core.make(canvas, o, {
+      pure: true, dur: function (op) { return op.dur || 5; },
+      draw: function (g, e) {
+        var R = o.rows || 4, C = o.cols || 3, S = o.scale || 3.2, k = core.ease(e.p);
+        var h0 = e.H * .26, w0 = h0 * .78; S = Math.min(S, e.H * .84 / h0); var sc = core.lerp(1, S, k), w = w0 * sc, h = h0 * sc;
+        var x = (e.W - w) / 2, y = (e.H - h) / 2 - (o.label ? 8 : 0);
+        var inner = core.smooth(.25, .75, e.p);  // small sheets materialise inside the big one
+        sheet(g, e, x, y, w, h, R, 1 - inner, true);
+        if (inner > 0) {
+          g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.globalAlpha = inner;
+          var pad = w * .08, gx = w * .05, gy = h * .035, cw = (w - pad * 2 - gx * (C - 1)) / C, ch = (h - pad * 2 - gy * (R - 1)) / R;
+          g.fillStyle = e.rgb('--bg'); g.fillRect(x + w * .02, y + h * .02, w * .96, h * .96);
+          for (var j = 0; j < R; j++) for (var i = 0; i < C; i++) sheet(g, e, x + pad + i * (cw + gx), y + pad + j * (ch + gy), cw, ch, R, inner, false);
+          g.restore();
+          g.strokeStyle = e.rgb(o.color || '--hi'); g.lineWidth = 2; g.strokeRect(x + .5, y + .5, w - 1, h - 1);
+        }
+        if (o.label) { g.fillStyle = e.a('--muted', core.smooth(.8, 1, e.p)); g.font = '13px ui-monospace,Consolas,monospace'; g.textAlign = 'center'; g.fillText(o.label, e.W / 2, y + h + 22); }
+      }
+    });
+  };
+})();
+/* ---- morph.js ---- */
+/* html-motion engine: morph. One passage of text becomes another: shared words travel to their new place, words
+ * that are lost drift off and fade, new words arrive. 2D, PURE function of time. Final frame = the "to" text.
+ * Engines.morph(canvas, { W, H, ...options })
+ * Options:
+ *   from 'text'  to 'text'   the two passages (required)
+ *   font '600 44px ui-sans-serif, system-ui, sans-serif'   canvas font shorthand (size in px sets line height)
+ *   width .8     wrap width as a fraction of W
+ *   align 'left' | 'center'
+ *   dur 3.2      seconds (then holds .6 s and 'freeze'; loop:true repeats)
+ * Text positions are measured after document.fonts.ready and re-measured when fonts arrive.
+ */
+(function () {
+  var core = Engines.core;
+  function norm(w) { return w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, ''); }
+  /* Keep a clean gap between words that share a line while they travel. items: [{x, y, m}] (m = measured width).
+   * Words are grouped into line bands by y, sorted by x, and pushed right just enough that each starts at least `pad`
+   * after the previous one ends. The final layout already has a full space between words, so at rest nothing moves. */
+  function spread(items, pad, lh) {
+    var order = items.slice().sort(function (a, b) { return a.y - b.y; }), i, j, band;
+    for (i = 0; i < order.length; i = j) {
+      band = [order[i]];
+      for (j = i + 1; j < order.length && order[j].y - order[i].y < lh * .6; j++) band.push(order[j]);
+      band.sort(function (a, b) { return a.x - b.x; });
+      for (var k = 1; k < band.length; k++) { var min = band[k - 1].x + band[k - 1].m + pad; if (band[k].x < min) band[k].x = min; }
+    }
+    return items;
+  }
+  Engines.morph = function (canvas, o) {
+    o = o || {};
+    var S = null, eng;
+    function layout(g, e, text) {
+      var size = +((o.font || '').match(/(\d+(?:\.\d+)?)px/) || [0, 44])[1], lh = size * 1.28, maxW = e.W * (o.width || .8), words = [], line = 0, x = 0, sp;
+      g.font = o.font || '600 44px ui-sans-serif, system-ui, sans-serif'; sp = g.measureText(' ').width;
+      String(text || '').split(/\s+/).filter(Boolean).forEach(function (w) {
+        var m = g.measureText(w).width;
+        if (x > 0 && x + m > maxW) { line++; x = 0; }
+        words.push({ w: w, n: norm(w), x: x, line: line, m: m }); x += m + sp;
+      });
+      words.sp = sp; words.lh = lh;
+      var lines = line + 1, y0 = (e.H - lines * lh) / 2 + lh * .78, widths = [];
+      words.forEach(function (q) { widths[q.line] = q.x + q.m; });
+      words.forEach(function (q) {
+        var off = (o.align === 'center') ? (maxW - widths[q.line]) / 2 : 0;
+        q.px = (e.W - maxW) / 2 + off + q.x; q.py = y0 + q.line * lh;
+      });
+      return words;
+    }
+    function build(g, e) {
+      var A = layout(g, e, o.from), B = layout(g, e, o.to), used = {};
+      B.forEach(function (b) { b.src = null; for (var i = 0; i < A.length; i++) if (!used[i] && A[i].n && A[i].n === b.n) { used[i] = 1; b.src = A[i]; A[i].kept = true; break; } });
+      var r = core.rng(o.seed || 4);
+      A.forEach(function (a) { a.dx = (r() - .5) * 90; a.dy = -(30 + r() * 70); a.rot = (r() - .5) * .5; });
+      S = { A: A, B: B, W: e.W, H: e.H, font: o.font, from: o.from, to: o.to, pad: Math.max(B.sp, A.sp) * .9, lh: B.lh };
+    }
+    eng = core.make(canvas, o, {
+      pure: true, dur: function (op) { return op.dur || 3.2; },
+      draw: function (g, e) {
+        if (!S || S.W !== e.W || S.H !== e.H || S.from !== o.from || S.to !== o.to || S.font !== o.font) build(g, e);
+        g.font = o.font || '600 44px ui-sans-serif, system-ui, sans-serif'; g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+        // order of events: lost words leave (0 to .45), shared words travel (.3 to .85), new words arrive only once travel is nearly done (.75 to 1)
+        var p = e.p, out = core.smooth(0, .45, p), mv = core.ease(core.smooth(.3, .85, p)), inn = core.smooth(.75, 1, p), fin = core.smooth(.9, 1, p);
+        S.A.forEach(function (a) {
+          if (a.kept) return;
+          g.save(); g.globalAlpha = 1 - out; g.translate(a.px + a.dx * out, a.py + a.dy * out); g.rotate(a.rot * out);
+          g.fillStyle = e.mix('--ink', '--muted', out); g.fillText(a.w, 0, 0); g.restore();
+        });
+        var cur = S.B.map(function (b) {
+          var x = b.px, y = b.py, a = 1;
+          if (b.src) { x = core.lerp(b.src.px, b.px, mv); y = core.lerp(b.src.py, b.py, mv); }
+          else { a = inn; y += (1 - inn) * 14; }
+          return { b: b, x: x, y: y, m: b.m, a: a };
+        });
+        spread(cur.filter(function (c) { return c.a > .02; }), S.pad, S.lh);
+        cur.forEach(function (c) {
+          g.globalAlpha = c.a; g.fillStyle = c.b.src ? e.rgb('--ink') : e.mix('--hi', '--ink', fin); g.fillText(c.b.w, c.x, c.y);
+        });
+        g.globalAlpha = 1;
+      }
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { S = null; eng.redraw(); });
+    return eng;
+  };
+  Engines.morph.spread = spread; // pure helper, exposed so tests can check word spacing without a canvas
+})();
+/* ---- shader.js ---- */
+/* html-motion engine: shader. A full-surface flowing field with optional contour lines (WebGL fragment shader).
+ * GPU, PURE function of time (drawAt(t) is exact). One heavy engine per page; at most one decorative layer.
+ * Without WebGL, on a shader error or a lost context the canvas gets a still gradient built from the tokens
+ * (data-fallback="still"). The governor halves resolution, then freezes, on a slow machine.
+ * Engines.shader(canvas, { W, H, ...options })
+ * Options:
+ *   speed .25      field drift rate (live)
+ *   scale 2.4      feature size: higher = more, smaller swirls (live)
+ *   lines 10       contour levels; 0 = no contour lines (live)
+ *   lineAlpha .4   contour strength 0..1 (live)
+ *   quality 1      resolution multiplier on top of DPR (use .6 or less for always-on pages)
+ *   still 6        the time (s) painted under reduced motion
+ * Colours: --bg --surface --hi --alt --line (read every frame).
+ */
+(function () {
+  var core = Engines.core;
+  var VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+  var FS = 'precision mediump float;uniform vec2 r;uniform float t,sc,lv,la;uniform vec3 cb,cs,ch,ca,cl;' +
+    'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}' +
+    'float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+vec2(1.,1.)),f.x),f.y);}' +
+    'float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return s;}' +
+    'void main(){vec2 u=gl_FragCoord.xy/r;u.x*=r.x/r.y;vec2 p=u*sc;' +
+    'vec2 q=vec2(fbm(p+t*.7),fbm(p+vec2(5.2,1.3)-t*.5));float v=fbm(p+2.*q+t*.3);' +
+    'vec3 c=mix(cb,cs,smoothstep(.2,.6,v));c=mix(c,ch,smoothstep(.5,.85,v)*.65);c=mix(c,ca,smoothstep(.55,.95,q.x*q.y*2.)*.3);' +
+    'if(lv>.5){float l=smoothstep(.43,.5,abs(fract(v*lv)-.5));c=mix(c,cl,l*la);}' +
+    'gl_FragColor=vec4(c,1.);}';
+  Engines.shader = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: true, gpu: true, gl: true,
+      init: function (gl, e, s) {
+        s.p = core.gl.program(gl, VS, FS, ['a']);
+        s.b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, s.b);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+        s.u = {}; ['r', 't', 'sc', 'lv', 'la', 'cb', 'cs', 'ch', 'ca', 'cl'].forEach(function (k) { s.u[k] = gl.getUniformLocation(s.p, k); });
+      },
+      draw: function (gl, e, s) {
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        gl.useProgram(s.p); gl.bindBuffer(gl.ARRAY_BUFFER, s.b);
+        gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+        var u = s.u;
+        gl.uniform2f(u.r, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        gl.uniform1f(u.t, e.t * (o.speed == null ? .25 : o.speed));
+        gl.uniform1f(u.sc, o.scale || 2.4); gl.uniform1f(u.lv, o.lines == null ? 10 : o.lines); gl.uniform1f(u.la, o.lineAlpha == null ? .4 : o.lineAlpha);
+        gl.uniform3fv(u.cb, e.f('--bg')); gl.uniform3fv(u.cs, e.f('--surface')); gl.uniform3fv(u.ch, e.f('--hi'));
+        gl.uniform3fv(u.ca, e.f('--alt')); gl.uniform3fv(u.cl, e.f('--line'));
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      },
+      destroy: function () {}
+    });
+  };
+})();
+/* ---- terrain.js ---- */
+/* html-motion engine: terrain. A camera gliding over a 3D landscape (WebGL) with contour lines, data columns and
+ * pinned labels. GPU, PURE function of time (the camera path is a function of t). Columns are the data: height =
+ * value. Labels are small DOM elements pinned to the column tops (the canvas's parent becomes position:relative if
+ * it was static) and are removed by destroy().
+ * Without WebGL, on a shader error or a lost context the canvas gets a still gradient (data-fallback="still");
+ * labels are then not drawn. The governor halves resolution, then freezes, on a slow machine.
+ * Engines.terrain(canvas, { W, H, ...options })
+ * Options:
+ *   columns [{x,z,h,label?,c?}]   x,z in -1.4..1.4 ground coordinates, h = height 0..1 (live), c = token (default '--alt').
+ *                                 Default: five seeded columns, unlabelled.
+ *   amp 1.8        terrain relief
+ *   lines 14       contour levels
+ *   speed 1        camera speed (live)
+ *   fog 4          fog distance
+ *   quality 1      resolution multiplier (use .6 or less for always-on pages)
+ *   still 6        the time (s) painted under reduced motion
+ *   seed 2         for the default columns
+ * Colours: --bg --surface --line --hi --alt (read every frame); label text uses --ink on --surface via CSS variables.
+ */
+(function () {
+  var core = Engines.core;
+  var HF = 'float th(vec2 p){return(.16*sin(p.x*2.1+.7)*cos(p.y*1.7)+.09*sin(p.x*4.3-p.y*3.1+1.2)+.045*cos(p.x*8.1+p.y*7.3))*amp;}';
+  var VS1 = 'attribute vec2 a;uniform mat4 m;uniform float amp;varying float vh,vd;' + HF +
+    'void main(){float h=th(a);vh=h;vec4 c=m*vec4(a.x,h,a.y,1.);vd=c.w;gl_Position=c;}';
+  var FS1 = 'precision mediump float;varying float vh,vd;uniform vec3 cb,cs,cl,ch;uniform float lv,fg;' +
+    'void main(){float k=clamp(vh*.5+.5,0.,1.);vec3 c=mix(cs,cl,k*.9);float l=smoothstep(.42,.5,abs(fract(vh*lv)-.5));' +
+    'c=mix(c,ch,l*.8);c=mix(c,cb,clamp((vd-1.2)/fg,0.,1.));gl_FragColor=vec4(c,1.);}';
+  var VS2 = 'attribute vec3 a;attribute float sh;uniform mat4 m;varying float vs,vd;' +
+    'void main(){vec4 c=m*vec4(a,1.);vd=c.w;vs=sh;gl_Position=c;}';
+  var FS2 = 'precision mediump float;varying float vs,vd;uniform vec3 cc,cb;uniform float fg;' +
+    'void main(){vec3 c=cc*vs;c=mix(c,cb,clamp((vd-1.2)/fg,0.,1.));gl_FragColor=vec4(c,1.);}';
+
+  function th(x, z, amp) { return (.16 * Math.sin(x * 2.1 + .7) * Math.cos(z * 1.7) + .09 * Math.sin(x * 4.3 - z * 3.1 + 1.2) + .045 * Math.cos(x * 8.1 + z * 7.3)) * amp; }
+  function persp(fov, asp, n, f) { var k = 1 / Math.tan(fov / 2); return [k / asp, 0, 0, 0, 0, k, 0, 0, 0, 0, (f + n) / (n - f), -1, 0, 0, 2 * f * n / (n - f), 0]; }
+  function look(e, t, u) {
+    var z = norm([e[0] - t[0], e[1] - t[1], e[2] - t[2]]), x = norm(cross(u, z)), y = cross(z, x);
+    return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot(x, e), -dot(y, e), -dot(z, e), 1];
+  }
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  function norm(a) { var l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
+  function mul(a, b) { var o = new Array(16); for (var c = 0; c < 4; c++) for (var r = 0; r < 4; r++) { var s = 0; for (var k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k]; o[c * 4 + r] = s; } return o; }
+
+  Engines.terrain = function (canvas, o) {
+    o = o || {};
+    function cols() {
+      if (o.columns) return o.columns;
+      var r = core.rng(o.seed || 2), out = [];
+      for (var i = 0; i < 5; i++) out.push({ x: (r() - .5) * 2.4, z: (r() - .3) * 2.2, h: .25 + r() * .6, c: i % 2 ? '--hi' : '--alt' });
+      return out;
+    }
+    return core.make(canvas, o, {
+      pure: true, gpu: true, gl: true,
+      init: function (gl, e, s) {
+        s.p1 = core.gl.program(gl, VS1, FS1, ['a']); s.p2 = core.gl.program(gl, VS2, FS2, ['a', 'sh']);
+        var N = 72, v = [], ix = [], i, j;
+        for (j = 0; j <= N; j++) for (i = 0; i <= N; i++) v.push(-1.6 + 3.2 * i / N, -1.6 + 3.2 * j / N);
+        for (j = 0; j < N; j++) for (i = 0; i < N; i++) { var q = j * (N + 1) + i; ix.push(q, q + 1, q + N + 1, q + 1, q + N + 2, q + N + 1); }
+        s.vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, s.vb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(v), gl.STATIC_DRAW);
+        s.ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, s.ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(ix), gl.STATIC_DRAW);
+        s.n = ix.length; s.cb = gl.createBuffer(); s.labels = [];
+        var U = function (p, ks) { var u = {}; ks.forEach(function (k) { u[k] = gl.getUniformLocation(p, k); }); return u; };
+        s.u1 = U(s.p1, ['m', 'amp', 'cb', 'cs', 'cl', 'ch', 'lv', 'fg']); s.u2 = U(s.p2, ['m', 'cc', 'cb', 'fg']);
+        gl.enable(gl.DEPTH_TEST);
+        var par = canvas.parentElement;
+        if (par && getComputedStyle(par).position === 'static') par.style.position = 'relative';
+        cols().forEach(function (c) {
+          if (!c.label || !par) { s.labels.push(null); return; }
+          var d = document.createElement('div'); d.textContent = c.label; d.setAttribute('data-hm-label', '');
+          d.style.cssText = 'position:absolute;left:0;top:0;transform:translate(-50%,-130%);pointer-events:none;white-space:nowrap;' +
+            'font:11px/1.2 ui-monospace,Consolas,monospace;padding:2px 6px;color:var(--ink);background:var(--surface);border:1px solid var(--line);display:none';
+          par.appendChild(d); s.labels.push(d);
+        });
+      },
+      draw: function (gl, e, s) {
+        var amp = o.amp || 1.8, sp = (o.speed == null ? 1 : o.speed) * e.t, W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
+        var eye = [.9 * Math.sin(.11 * sp), .78 + .12 * Math.sin(.17 * sp), -2.1 + .5 * Math.sin(.07 * sp)];
+        var tgt = [.4 * Math.sin(.09 * sp + 1), .05, .6];
+        var m = mul(persp(.96, W / H, .1, 14), look(eye, tgt, [0, 1, 0])), bg = e.f('--bg'), fg = o.fog || 4;
+        gl.viewport(0, 0, W, H); gl.clearColor(bg[0], bg[1], bg[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        // terrain
+        gl.useProgram(s.p1); var u = s.u1;
+        gl.uniformMatrix4fv(u.m, false, m); gl.uniform1f(u.amp, amp); gl.uniform1f(u.lv, o.lines || 14); gl.uniform1f(u.fg, fg);
+        gl.uniform3fv(u.cb, bg); gl.uniform3fv(u.cs, e.f('--surface')); gl.uniform3fv(u.cl, e.f('--line')); gl.uniform3fv(u.ch, e.f('--hi'));
+        gl.bindBuffer(gl.ARRAY_BUFFER, s.vb); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, s.ib); gl.drawElements(gl.TRIANGLES, s.n, gl.UNSIGNED_SHORT, 0);
+        // columns (one box each), then pin labels to their tops
+        gl.useProgram(s.p2); u = s.u2; gl.uniformMatrix4fv(u.m, false, m); gl.uniform3fv(u.cb, bg); gl.uniform1f(u.fg, fg);
+        gl.bindBuffer(gl.ARRAY_BUFFER, s.cb); gl.enableVertexAttribArray(0); gl.enableVertexAttribArray(1);
+        gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 16, 0); gl.vertexAttribPointer(1, 1, gl.FLOAT, false, 16, 12);
+        var list = cols(), cw = canvas.clientWidth, ch = canvas.clientHeight;
+        list.forEach(function (c, i) {
+          var hw = .06, y0 = th(c.x, c.z, amp) - .03, y1 = y0 + .03 + (c.h == null ? .5 : c.h) * .7;
+          var x0 = c.x - hw, x1 = c.x + hw, z0 = c.z - hw, z1 = c.z + hw, f = [];
+          function quad(a, b, c2, d, sh) { [a, b, c2, a, c2, d].forEach(function (p) { f.push(p[0], p[1], p[2], sh); }); }
+          quad([x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1], 1);
+          quad([x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], .7); quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], .85);
+          quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], .6); quad([x1, y0, z0], [x1, y0, z1], [x1, y1, z1], [x1, y1, z0], .75);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(f), gl.DYNAMIC_DRAW);
+          gl.uniform3fv(u.cc, e.f(c.c || '--alt')); gl.drawArrays(gl.TRIANGLES, 0, 30);
+          var d = s.labels[i];
+          if (d) {
+            var cl = [m[0] * c.x + m[4] * y1 + m[8] * c.z + m[12], m[1] * c.x + m[5] * y1 + m[9] * c.z + m[13], m[3] * c.x + m[7] * y1 + m[11] * c.z + m[15]];
+            if (cl[2] <= 0) { d.style.display = 'none'; return; }
+            d.style.display = 'block';
+            d.style.left = (canvas.offsetLeft + (cl[0] / cl[2] * .5 + .5) * cw) + 'px';
+            d.style.top = (canvas.offsetTop + (1 - (cl[1] / cl[2] * .5 + .5)) * ch) + 'px';
+          }
+        });
+        gl.disableVertexAttribArray(1);
+      },
+      destroy: function (s) { (s.labels || []).forEach(function (d) { if (d && d.parentNode) d.parentNode.removeChild(d); }); }
+    });
+  };
+})();
+</script>
+<!-- html-motion:end -->
+<script>
+(function () {
+  var Q = new URLSearchParams(location.search), only = Q.get('engine'), freezeAt = Q.get('t');
+  var LIST = [
+    { name: 'streams',   shows: 'Things moving at different rates', cost: '2D', pure: false, opts: {} },
+    { name: 'graph',     shows: 'A network with travelers along its links', cost: '2D', pure: false, opts: {} },
+    { name: 'expand',    shows: 'Reach growing around a fixed core', cost: '2D', pure: true, opts: { loop: true, label: 'core' } },
+    { name: 'pullback',  shows: 'One unit, then the whole grid, then work passing between', cost: '2D', pure: false, opts: { label: 'one unit' } },
+    { name: 'split',     shows: 'One stream dividing into two branches', cost: '2D', pure: false, opts: { ratio: .4, labels: ['approved', 'needs review'] } },
+    { name: 'transform', shows: 'A familiar object becoming a larger version of itself', cost: '2D', pure: true, opts: { loop: true, label: 'a sheet is a grid of sheets' } },
+    { name: 'morph',     shows: 'One passage of text becoming another, lost words drifting off', cost: '2D', pure: true,
+      opts: { loop: true, from: 'Staff re-key every income figure by hand each year', to: 'Staff review income figures the system has already checked', font: '600 34px ui-sans-serif, system-ui, sans-serif', width: .84 } },
+    { name: 'shader',    shows: 'A full-surface flowing field or contour map', cost: 'GPU', pure: true, opts: {} },
+    { name: 'terrain',   shows: 'A camera flying over a 3D landscape, with data columns and pinned labels', cost: 'GPU', pure: true,
+      opts: { columns: [{ x: -.7, z: .1, h: .8, label: 'north 82' }, { x: .2, z: .7, h: .45, label: 'east 45', c: '--hi' }, { x: .8, z: -.2, h: .6, label: 'south 60' }, { x: -.2, z: -.5, h: .3 }] } }
+  ];
+  var grid = document.getElementById('grid'), msg = document.getElementById('msg'), live = [];
+  var known = LIST.some(function (x) { return x.name === only; });
+  if (only && !known) { msg.textContent = 'Unknown engine "' + only + '". Showing all.'; only = null; }
+  if (only) { grid.className = 'solo'; document.getElementById('all').hidden = false; document.title = 'html-motion: ' + only; }
+  var W = only ? 960 : 640, H = only ? 540 : 360;
+
+  LIST.forEach(function (it) {
+    if (only && it.name !== only) return;
+    var art = document.createElement('article'), id = 'cv-' + it.name;
+    art.innerHTML = '<div class="stage"><canvas id="' + id + '" role="img" aria-label="' + it.name + ': ' + it.shows + '"></canvas></div>' +
+      '<div class="info"><h2>' + it.name + '</h2><p>' + it.shows + '</p><div class="row">' +
+      '<span class="tag">' + it.cost + '</span><span class="tag">' + (it.pure ? 'pure f(t)' : 'stateful') + '</span>' +
+      '<button type="button" data-replay="' + it.name + '">Replay</button>' +
+      (only ? '' : '<a class="btn" href="?engine=' + it.name + '">Open</a>') + '</div></div>';
+    grid.appendChild(art);
+    var cv = art.querySelector('canvas'), box = { it: it, cv: cv, eng: null };
+    function build() {
+      if (box.eng) box.eng.destroy();
+      var o = {}; for (var k in it.opts) o[k] = it.opts[k];
+      o.W = W; o.H = H; o.css = false;
+      box.eng = Engines[it.name](cv, o);
+      if (freezeAt != null) box.eng.drawAt(parseFloat(freezeAt) || 0); else box.eng.start();
+    }
+    box.build = build; live.push(box); build();
+  });
+
+  grid.addEventListener('click', function (e) {
+    var n = e.target.getAttribute && e.target.getAttribute('data-replay');
+    if (!n) return;
+    live.forEach(function (b) { if (b.it.name === n) b.build(); });
+  });
+
+  var btn = document.getElementById('theme');
+  function label() { var d = document.documentElement.getAttribute('data-deck'); btn.textContent = 'Theme: ' + d; btn.setAttribute('aria-pressed', String(d === 'light')); }
+  btn.addEventListener('click', function () {
+    var r = document.documentElement, d = r.getAttribute('data-deck') === 'dark' ? 'light' : 'dark';
+    r.setAttribute('data-deck', d); label();
+    setTimeout(function () { live.forEach(function (b) { b.eng.redraw(); }); }, 420); // repaint engines that are not looping
+  });
+  label();
+})();
+</script>
+</body>
+</html>

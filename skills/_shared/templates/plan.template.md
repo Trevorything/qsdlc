@@ -1,44 +1,53 @@
-# Plan — <feature name>
+# Plan: <feature name>
 
 - Slug: `<feature-slug>`
 - Stage: Build
+- Mode: <interactive | autonomous>
 - Source: [Intent.md](../Intent.md), [spec.md](../spec.md)
+- Base SHA: <sha or none>
+- Branch: <name or none>
 
 ## Phases
 
-Break the work into ordered phases. Parallelizable phases should say so explicitly.
+Ordered. Each phase carries a developer skill, a relay pattern, and a verification step. Parallel phases say so.
 
-### Phase 1 — <name>
-
-- Goal:
-- Steps:
-  1.
-- Files touched:
-- Developer skill: `qsdlc-dev-<web|api|cli|...>`
-- Depends on: (none | Phase N)
-- Verification: how to confirm this phase actually works before moving on
-
-### Phase 2 — <name>
+### Phase 1: <name>
 
 - Goal:
 - Steps:
   1.
 - Files touched:
+- Requirements: <F1, R1>
+- Developer skill: `qsdlc-dev-<web|api|cli>`
+- Pattern: <Multipart Phases | Dependency | Comparative | Pagination | Audit | Realignment | Scatter | Consensus | Batch Testing>
+- Depends on: <none | Phase N>
+- Parallel with: <none | Phase N>
+- Verification: <command and expected output>
+
+### Phase 2: <name>
+
+- Goal:
+- Steps:
+  1.
+- Files touched:
+- Requirements:
 - Developer skill:
+- Pattern:
 - Depends on:
+- Parallel with:
 - Verification:
 
 ## Execution notes
 
-Anything a subagent picking up a phase cold would need that isn't obvious from the phase itself.
+What a subagent picking up a phase cold needs that is not obvious from the phase.
 
 -
 
 ## Status
 
-Update as phases complete.
+| Phase | Status | Review | Notes |
+|---|---|---|---|
+| 1 | not started | pending | |
+| 2 | not started | pending | |
 
-| Phase | Status | Notes |
-|---|---|---|
-| 1 | not started | |
-| 2 | not started | |
+Status values: `not started`, `in progress`, `done`, `parked`, `blocked`. Review values: `pending`, `pass`, `fixed after N rounds`, `parked`.

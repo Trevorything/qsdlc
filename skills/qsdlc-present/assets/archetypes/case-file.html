@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="brand-source" content="unbranded">
+<meta name="color-scheme" content="light dark">
+<title>[PLACEHOLDER] Case file — triage report</title>
+<!-- how this was made: archetype=case-file (structure only; tokens come from brand-bind.json) -->
+<style id="tokens">
+/* unbranded placeholder — overwritten by brand-bind */
+:root{--bg:#f6f5f2;--surface:#fdfcfa;--panel:#ebe9e4;--line:#d4d1c9;--ink:#1d1c1a;--muted:#5c5a54;--hi:#0b6b6b;--ok:#2f6b2f;--alt:#8a5a00;--risk:#a8321f;
+--radius:2px;--border:1px;--font-display:ui-serif,serif;--font-sans:ui-sans-serif,system-ui,sans-serif;--font-mono:ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}}
+:root[data-theme="dark"]{--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}
+</style>
+<!-- qsdlc-present:start -->
+<!-- inline.mjs injects kit.css + kit.js (+ diagram.js / html-motion engines if rolled) here -->
+<!-- qsdlc-present:end -->
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);line-height:1.6}
+h1,h2{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+.file{max-width:76rem;margin:0 auto;padding:1.5rem 16px 3rem;display:grid;grid-template-columns:14rem minmax(0,1fr);gap:2rem;align-items:start}
+.file > header{grid-column:1/-1;border-bottom:var(--border) solid var(--line);padding-bottom:1rem;display:flex;flex-direction:column;gap:.5rem}
+h1{font-size:clamp(1.8rem,4vw,2.8rem)}
+.rail{position:sticky;top:1rem;display:flex;flex-direction:column;gap:.25rem}
+.rail a{display:block;padding:.45rem .75rem;border-left:2px solid var(--line);color:var(--muted);text-decoration:none}
+.rail a[aria-selected="true"], .rail a:hover{border-left-color:var(--hi);color:var(--ink)}
+.dossier{display:flex;flex-direction:column;gap:2rem}
+.sec{background:var(--surface);border:var(--border) solid var(--line);border-radius:var(--radius);padding:1.25rem 1.4rem;scroll-margin-top:1rem}
+.sec[hidden]{display:none}
+h2{font-size:1.3rem;margin-bottom:.6rem}
+@media (max-width:48rem){.file{grid-template-columns:minmax(0,1fr)}.rail{position:static;flex-direction:row;flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}[data-reveal]{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+<main class="file">
+  <header>
+    <p class="eyebrow">[PLACEHOLDER] Case file · id</p>
+    <h1>[PLACEHOLDER] Subject of the file</h1>
+    <p class="muted">[PLACEHOLDER] One-line state. Sections are tabs on wide screens and simply stack on phones, with reduced motion, or without JavaScript.</p>
+  </header>
+  <nav class="rail" aria-label="File sections">
+    <a href="#summary">Summary</a><a href="#findings">Findings</a><a href="#actions">Actions</a>
+  </nav>
+  <div class="dossier">
+    <section class="sec" id="summary" data-reveal><h2>Summary</h2><p>[PLACEHOLDER] State, delta since last run, recommended action.</p></section>
+    <section class="sec" id="findings" data-reveal><h2>Findings</h2>
+      <div class="table-wrap" tabindex="0"><table>
+        <caption class="sr">Findings backlog</caption>
+        <thead><tr><th scope="col">Id</th><th scope="col">Finding</th><th scope="col" class="num">Severity</th></tr></thead>
+        <tbody><tr><th scope="row">[PLACEHOLDER] ID-001</th><td>[PLACEHOLDER] Evidence-backed finding</td><td class="num">—</td></tr></tbody>
+      </table></div>
+    </section>
+    <section class="sec" id="actions" data-reveal><h2>Actions</h2><p>[PLACEHOLDER] Ranked next steps with owners and links to the source markdown.</p></section>
+  </div>
+</main>
+<script>
+if (window.Kit) Kit.init();
+(function () { // tab mode on wide screens only; otherwise every section stays visible (stacked)
+  var links = [].slice.call(document.querySelectorAll('.rail a')), panels = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }), mq = matchMedia('(min-width: 48.01rem)');
+  function select(i) { panels.forEach(function (p, k) { p.hidden = k !== i; links[k].setAttribute('aria-selected', k === i ? 'true' : 'false'); links[k].tabIndex = k === i ? 0 : -1; }); }
+  function setup() {
+    if (mq.matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) { links.forEach(function (a, i) { a.setAttribute('role', 'tab'); a.onclick = function (e) { e.preventDefault(); select(i); }; }); select(0); }
+    else { links.forEach(function (a) { a.removeAttribute('role'); a.removeAttribute('aria-selected'); a.removeAttribute('tabindex'); a.onclick = null; }); panels.forEach(function (p) { p.hidden = false; }); }
+  }
+  setup(); mq.addEventListener('change', setup);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+{
+  "deck": "motion",
+  "description": "Motion devices: what moves and why. Every device maps to a fact. Kit devices first, html-motion engines second.",
+  "banned": [
+    "marquees",
+    "parallax for its own sake",
+    "spin",
+    "flash",
+    "count-ups on non-numeric data",
+    "autoplay loops longer than 8 s without a pause control"
+  ],
+  "cards": [
+    {
+      "id": "draw",
+      "deck": "motion",
+      "name": "Draw",
+      "shows": "a connection or a trend exists",
+      "impl": "Kit.draw: stroke-dashoffset on an svg path",
+      "fits": [
+        "implementation-process-map",
+        "design-pitch-deck",
+        "dashboard",
+        "performance-results"
+      ],
+      "needs": [],
+      "cost": "low",
+      "weight": 1.2,
+      "avoid": [],
+      "reduced": "path fully drawn",
+      "phone": "unchanged",
+      "refs": [
+        "codrops svg draw"
+      ],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "grow",
+      "deck": "motion",
+      "name": "Grow",
+      "shows": "magnitudes, ordered",
+      "impl": "Kit.grow: staggered bar scale from the baseline",
+      "fits": [
+        "performance-results",
+        "dashboard",
+        "release-notes"
+      ],
+      "needs": [
+        "bars"
+      ],
+      "cost": "low",
+      "weight": 1.2,
+      "avoid": [],
+      "reduced": "bars at full length",
+      "phone": "unchanged",
+      "refs": [],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "count",
+      "deck": "motion",
+      "name": "Count",
+      "shows": "a real number arriving",
+      "impl": "Kit.count: text tween with tabular numerals, final value in markup",
+      "fits": [
+        "performance-results",
+        "dashboard",
+        "release-notes",
+        "inspo"
+      ],
+      "needs": [
+        "numeric-metric"
+      ],
+      "cost": "low",
+      "weight": 1,
+      "avoid": [],
+      "reduced": "final value shown",
+      "phone": "unchanged",
+      "refs": [],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "flow-dots",
+      "deck": "motion",
+      "name": "Flow dots",
+      "shows": "throughput or a hand-off along a real path",
+      "impl": "Kit.flow: dots travelling along an svg path in the actual hand-off order",
+      "fits": [
+        "implementation-process-map",
+        "dashboard"
+      ],
+      "needs": [
+        "path"
+      ],
+      "cost": "low",
+      "weight": 1,
+      "avoid": [],
+      "reduced": "static arrowheads",
+      "phone": "unchanged",
+      "refs": [],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "scrub",
+      "deck": "motion",
+      "name": "Scrub",
+      "shows": "progress through a story",
+      "impl": "Kit.scrub: scroll linked progress, animation-timeline when available",
+      "fits": [
+        "design-pitch-deck",
+        "implementation-process-map",
+        "inspo"
+      ],
+      "needs": [
+        "steps>=3"
+      ],
+      "cost": "low",
+      "weight": 1,
+      "avoid": [],
+      "reduced": "all states shown",
+      "phone": "unchanged",
+      "refs": [
+        "pudding.cool"
+      ],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "step-reveal",
+      "deck": "motion",
+      "name": "Step reveal",
+      "shows": "sequence or dependency order",
+      "impl": "Kit.reveal: stagger of 0.15 to 0.4 s, visual first, text after",
+      "fits": [
+        "design-pitch-deck",
+        "implementation-process-map",
+        "release-notes",
+        "inspo",
+        "dashboard"
+      ],
+      "needs": [],
+      "cost": "low",
+      "weight": 1.3,
+      "avoid": [],
+      "reduced": "everything visible",
+      "phone": "unchanged",
+      "refs": [],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "state-pulse",
+      "deck": "motion",
+      "name": "State pulse",
+      "shows": "a live or working state",
+      "impl": "slow opacity pulse on exactly one element via css animation",
+      "fits": [
+        "dashboard",
+        "implementation-process-map"
+      ],
+      "needs": [
+        "live-state"
+      ],
+      "cost": "low",
+      "weight": 0.9,
+      "avoid": [],
+      "reduced": "static marker",
+      "phone": "unchanged",
+      "refs": [],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "morph-text",
+      "deck": "motion",
+      "name": "Morph text",
+      "shows": "one statement becoming another",
+      "impl": "html-motion morph engine, final text in markup",
+      "fits": [
+        "design-pitch-deck",
+        "release-notes"
+      ],
+      "needs": [
+        "two-statements"
+      ],
+      "cost": "med",
+      "weight": 0.6,
+      "avoid": [
+        "field"
+      ],
+      "reduced": "final text shown",
+      "phone": "unchanged",
+      "refs": [],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "field",
+      "deck": "motion",
+      "name": "Field",
+      "shows": "ambient atmosphere, a decorative layer, at most one per page",
+      "impl": "html-motion shader engine with a still gradient fallback",
+      "fits": [
+        "inspo",
+        "dashboard"
+      ],
+      "needs": [],
+      "cost": "high",
+      "weight": 0.5,
+      "avoid": [
+        "morph-text"
+      ],
+      "reduced": "still frame",
+      "phone": "still frame",
+      "refs": [
+        "codrops"
+      ],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "wipe",
+      "deck": "motion",
+      "name": "Wipe",
+      "shows": "before against after",
+      "impl": "clip-path reveal driven by pointer or keyboard",
+      "fits": [
+        "release-notes",
+        "design-pitch-deck"
+      ],
+      "needs": [
+        "baseline"
+      ],
+      "cost": "low",
+      "weight": 1,
+      "avoid": [],
+      "reduced": "both states shown side by side",
+      "phone": "unchanged",
+      "refs": [],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    },
+    {
+      "id": "streams",
+      "deck": "motion",
+      "name": "Streams",
+      "shows": "things moving at different rates",
+      "impl": "html-motion streams engine",
+      "fits": [
+        "inspo",
+        "dashboard"
+      ],
+      "needs": [],
+      "cost": "med",
+      "weight": 0.5,
+      "avoid": [
+        "field"
+      ],
+      "reduced": "final frame",
+      "phone": "fewer particles",
+      "refs": [],
+      "neverBorrow": [
+        "source palette",
+        "source imagery",
+        "decorative looping"
+      ]
+    }
+  ]
+}

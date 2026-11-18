@@ -7,7 +7,7 @@
     {
       "name": "qsdlc",
       "source": ".",
-      "description": "Quintessence Software Development Lifecycle — Plan, Design, Build, Test, Deploy skills for structured AI-driven development."
+      "description": "QSDLC v2, a Continuous Software Factory: Plan, Design, Build, Test, Deploy with track sizing, autonomous scheduled factory loops (draft PRs only), two-stage review, verification maps, a correction-to-check ratchet, qsdlc-present and html-motion artifacts, qsdlc-herdr multi-agent relays, and qsdlc-archify + qsdlc-graphify tools."
     }
   ]
 }

@@ -1,46 +1,59 @@
 ---
 name: qsdlc
-description: Kick off or resume the QSDLC lifecycle (Plan, Design, Build, Test, Deploy) for a feature or build. Use when the user wants to start a new feature the structured way, says things like "let's start a new feature", "kick off qsdlc", "run the SDLC process", or asks to resume/check status on an in-progress QSDLC feature.
+description: Kick off or resume QSDLC (Plan, Design, Build, Test, Deploy) for a feature, in interactive mode with stage gates or handed to the autonomous factory. Use when the user wants to start a feature the structured way, says "kick off qsdlc", "run the SDLC process", or asks to resume or check status on an in-progress QSDLC feature.
 ---
 
-# qsdlc — kickoff / orchestrator
+# qsdlc: kickoff and orchestrator
 
-You are running the top-level QSDLC orchestrator. Read [../_shared/conventions.md](../_shared/conventions.md) first — it defines the `.qsdlc/<feature-slug>/` contract, the stage-gate rule, and the artifact convention that every stage below depends on.
+Read [../_shared/conventions.md](../_shared/conventions.md) first. It defines the `.qsdlc/` layout, modes, tracks, terminal statuses, and the stage-gate rule.
 
-## 1. Figure out where we are
+## 1. Find where we are
 
-Look for a `.qsdlc/` folder at the root of the current project.
+List `.qsdlc/*/` and keep **only folders that contain `state.md`**. `specs/`, `factory/`, `rituals/`, and `archive/` are reserved and never offered as features.
 
-- **No `.qsdlc/` folder, or user clearly wants something new**: this is a new feature. Ask for a short feature name, derive a kebab-case slug, confirm it with the user, then create `.qsdlc/<slug>/` and a `state.md` (see conventions doc) with stage `plan`.
-- **`.qsdlc/` exists with one or more feature folders**: read each `state.md`. If there's exactly one in-progress feature (stage isn't `done`), confirm with the user whether to resume it. If there are several, list them (slug + current stage) and ask which one, or whether to start a new one.
+- No feature folders, or the user wants something new: new feature.
+- One unfinished feature (`Current stage` is not `done`): confirm resuming it.
+- Several: list slug, track, current stage, `Pending confirmation`, and `Terminal status`; ask which, or whether to start new.
 
-Never guess the slug or silently create the folder without the user having confirmed the feature name — this is the one piece of state every later stage depends on.
+If any feature shows `Pending confirmation` other than `none`, say so first: an autonomous run drafted work that waits for a human turn.
 
-## 2. Scope the run
+## 2. New feature: triage
 
-Briefly confirm with the user: run the full lifecycle end-to-end (Plan → Design → Build → Test → Deploy), or just resume/run specific stage(s)? Someone might only want "just re-run the QA pass" — don't assume full end-to-end every time.
+1. Get a short feature name; derive a kebab-case slug; confirm it with the user. Create `.qsdlc/<slug>/state.md` from [../_shared/templates/state.template.md](../_shared/templates/state.template.md).
+2. Invoke `qsdlc-triage` with the request. It writes `Track`, `Risk`, `Autonomy eligible`, and `Skipped` into `state.md`. Show the result and let the user override the track (a lower track than the risk floor is refused).
+3. Pick the mode:
+   - **Interactive** (default): a human gates each stage.
+   - **Autonomous**: only when `Autonomy eligible: true` and `factory/policy.md` exists. Hand off to `qsdlc-factory` with the slug and stop; the factory runs the track under check-gates and ends at a draft PR or a mailbox entry.
 
-## 3. Chain the stages
+## 3. Scope the run
 
-For each stage in scope, in order, use the **`Skill` tool** to invoke the corresponding skill by name:
+Ask once: full track end to end, or specific stage(s)? "Just re-run QA" is valid. Stage list comes from the track table in conventions, minus `Skipped`.
 
-| Stage | Skill to invoke |
+## 4. Chain the stages (interactive)
+
+Invoke each stage skill with the `Skill` tool, passing slug and context:
+
+| Stage | Skill |
 |---|---|
 | Plan | `qsdlc-interview` |
-| Design | `qsdlc-design` |
-| Build | `qsdlc-build` |
-| Test | `qsdlc-qa` |
+| Design | `qsdlc-design` (calls `qsdlc-feature-research` when prior art helps) |
+| Build | `qsdlc-build` (calls `qsdlc-review` per phase) |
+| Test | `qsdlc-qa` (calls `qsdlc-verify` for the feature map) |
 | Deploy | `qsdlc-pr` |
 
-Pass along the feature slug and project context so the invoked skill doesn't have to re-derive it.
+Track shortcuts: `quick` starts at Build with an `Intent.md` from the ticket; `bugfix` runs assess then `qsdlc-build` then `qsdlc-qa` with red-to-green proof; `discovery` stops after `qsdlc-feature-research` writes `findings.md`.
 
-**After each stage skill finishes:**
-1. Confirm its `state.md` entry shows the stage as confirmed/complete (per the stage-gate rule in the conventions doc — the stage skill itself is responsible for getting that confirmation, not you).
-2. Summarize in one or two sentences what was produced (the doc + the artifact, with paths).
-3. Ask the user whether to continue to the next stage now, or pause here.
+After each stage:
+1. Check `state.md` shows the stage confirmed (the stage skill owns that confirmation).
+2. Run `node <SKILLS>/_shared/scripts/qsdlc-lint.mjs --root . --slug <slug>`; report any error before continuing.
+3. Summarize in one or two sentences with file paths, then ask whether to continue or pause.
 
-**Never** skip a stage-gate confirmation to save turns, and never invoke `qsdlc-pr` expecting it to push/open a PR without its own explicit confirmation step — that's `qsdlc-pr`'s responsibility, but as the orchestrator you should not imply blanket authorization by chaining straight into it.
+Never skip a confirmation to save turns. Never imply blanket authorization when chaining into `qsdlc-pr`; it asks on its own.
 
-## 4. Wrapping up
+## 5. Resume
 
-When Deploy completes (or the user stops earlier), update `state.md`'s stage to `done` (or leave it at whichever stage the user chose to stop on) and give a short summary of the whole run: slug, stages completed, where every doc and artifact ended up.
+`state.md` is the resume marker. Read `Current stage`, `Pending confirmation`, and the last log lines, then continue at the stage that is not confirmed. If a stage's artifacts exist but are unconfirmed, review them with the user instead of regenerating.
+
+## 6. Wrap up
+
+On Deploy completion set `Current stage: done` (interactive mode only, after confirmation). Report slug, track, stages run and skipped, and where each document and artifact lives.

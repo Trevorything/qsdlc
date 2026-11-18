@@ -1,53 +1,69 @@
-# Intent — <feature name>
+# Intent: <feature name>
 
 - Slug: `<feature-slug>`
 - Started: <ISO date>
 - Stage: Plan
+- Track: <quick | bugfix | delta | full | discovery>
+- Source: <interview | ticket <id> | scout candidate <id>>
 
 ## Problem
 
-What's broken, missing, or worth building? Who feels this problem today?
+What is broken, missing, or worth building? Who feels it today, and how do you know?
 
 ## Goal
 
-What does success look like, stated as an outcome — not a solution.
+Success stated as an outcome, not a solution.
 
 ## Target users
 
-Who is this for? If more than one audience, name the primary one.
+Who is this for? Name the primary audience.
 
 ## Success criteria
 
-Concrete, checkable statements. Someone unfamiliar with this conversation should be able to look at the finished work and judge pass/fail against these.
+Concrete, checkable statements. Someone unfamiliar with this conversation can judge pass or fail against them.
 
 -
 
 ## Constraints
 
-Technical, timeline, budget, or organizational constraints that bound the solution space.
+Technical, timeline, budget, regulatory, organizational.
 
 -
 
 ## Explicit non-goals
 
-What this deliberately does *not* cover, so scope doesn't silently creep during Design/Build.
+What this deliberately does not cover.
 
 -
 
 ## Prior art / references
 
-Existing features, competitors, or internal precedents that informed this intent.
-
 -
 
 ## Open questions
 
-Anything still unresolved after the interview — carry these into Design rather than guessing.
+Unresolved after the interview. Carry into Design; do not guess.
+
+-
+
+## Research questions
+
+Factual questions about the current system that Design must answer from the code. Written from the problem and goal only, never from the proposed solution.
+
+-
+
+## Assumptions
+
+Headless intake only. Facts taken as true because nobody could be asked. Each line: assumption, source, cost if wrong.
+
+-
+
+## Rulings
+
+Decisions made without asking. Each line: `Ruling: <what> | why: <reason> | cost if wrong: <impact>`.
 
 -
 
 ## Decision log
 
-Record any pivots made during the interview, with the reasoning, so later stages don't relitigate them.
-
-- <ISO date> —
+- <ISO date> <pivot and reasoning>

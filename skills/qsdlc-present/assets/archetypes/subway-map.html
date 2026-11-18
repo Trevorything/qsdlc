@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="brand-source" content="unbranded">
+<meta name="color-scheme" content="light dark">
+<title>[PLACEHOLDER] Implementation process map</title>
+<!-- how this was made: archetype=subway-map (structure only; tokens come from brand-bind.json) -->
+<style id="tokens">
+/* unbranded placeholder — overwritten by brand-bind */
+:root{--bg:#f6f5f2;--surface:#fdfcfa;--panel:#ebe9e4;--line:#d4d1c9;--ink:#1d1c1a;--muted:#5c5a54;--hi:#0b6b6b;--ok:#2f6b2f;--alt:#8a5a00;--risk:#a8321f;
+--radius:2px;--border:1px;--font-display:ui-serif,serif;--font-sans:ui-sans-serif,system-ui,sans-serif;--font-mono:ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}}
+:root[data-theme="dark"]{--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}
+</style>
+<!-- qsdlc-present:start -->
+<!-- inline.mjs injects kit.css + kit.js + diagram.js (+ html-motion engines if rolled) here -->
+<!-- qsdlc-present:end -->
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);line-height:1.55}
+h1,h2{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+.map-page{max-width:84rem;margin:0 auto;padding:1.5rem 16px 3rem;display:flex;flex-direction:column;gap:1.5rem}
+header{display:flex;flex-direction:column;gap:.5rem;border-bottom:var(--border) solid var(--line);padding-bottom:1rem}
+h1{font-size:clamp(1.8rem,4.5vw,3rem)}
+.legend{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;color:var(--muted);font-size:.9rem;margin:0;padding:0;list-style:none}
+.cell{background:var(--surface);border:var(--border) solid var(--line);border-radius:var(--radius);padding:1rem 1.1rem}
+h2{font-size:1.1rem;margin-bottom:.6rem}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}[data-reveal]{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+<main class="map-page">
+  <header data-reveal>
+    <p class="eyebrow">[PLACEHOLDER] feature-slug · build</p>
+    <h1>[PLACEHOLDER] Phases, dependencies and hand-offs</h1>
+    <ul class="legend" aria-label="Status legend"><li>done = check</li><li>running = triangle</li><li>blocked = barred circle</li><li>to do = dashed outline</li><li>at risk = warning triangle</li></ul>
+  </header>
+  <section class="cell" data-reveal aria-label="Process map">
+    <script type="application/json" data-diagram>{
+      "title": "[PLACEHOLDER] Process map", "direction": "LR", "illustrative": true,
+      "groups": [{"id": "a", "label": "Phase group"}],
+      "nodes": [
+        {"id": "p1", "label": "[PLACEHOLDER] Phase 1", "status": "done", "tag": "qsdlc-dev-api", "group": "a"},
+        {"id": "p2", "label": "[PLACEHOLDER] Phase 2", "status": "running", "tag": "qsdlc-dev-web", "group": "a"},
+        {"id": "p3", "label": "[PLACEHOLDER] Phase 3", "status": "todo"}
+      ],
+      "edges": [{"from": "p1", "to": "p2", "label": "hand-off", "kind": "handoff"}, {"from": "p2", "to": "p3"}]
+    }</script>
+  </section>
+  <section class="cell" data-reveal>
+    <h2>Phases</h2>
+    <div class="table-wrap" tabindex="0"><table>
+      <caption class="sr">Phase list</caption>
+      <thead><tr><th scope="col">Phase</th><th scope="col">Status</th><th scope="col">Skill</th><th scope="col">Depends on</th></tr></thead>
+      <tbody><tr><th scope="row">[PLACEHOLDER] Phase 1</th><td>done</td><td>qsdlc-dev-api</td><td>—</td></tr></tbody>
+    </table></div>
+  </section>
+</main>
+<script>if (window.Diagram) { Diagram.mount(); Diagram.animate(); } if (window.Kit) Kit.init();</script>
+</body>
+</html>

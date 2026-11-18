@@ -1,25 +1,37 @@
 ---
 name: qsdlc-dev-web
-description: Developer-skill conventions for QSDLC build-stage work on frontend/web UI — component structure, state, accessibility, and testing conventions to follow when a plan.md phase is tagged qsdlc-dev-web.
+description: Developer-skill conventions for QSDLC build-stage work on frontend and web UI (component structure, state, accessibility, testing), with an Enforced by table. Use when a plan.md phase is tagged qsdlc-dev-web, in interactive or factory mode.
 ---
 
 # qsdlc-dev-web
 
-A starter developer skill for QSDLC's Build stage. This is deliberately framework-agnostic — it states conventions to follow, not a specific stack. If the target project already has established frontend conventions (existing component patterns, a state management approach, a design system), **those win** — this skill fills gaps, it doesn't override what the codebase already does.
+Framework-agnostic. If the target project already has frontend conventions (component patterns, state approach, design system), **those win**; this skill fills gaps.
 
-## Conventions
+## Conventions and enforcement
 
-- **Components**: match the project's existing component granularity and naming. Don't introduce a new pattern (e.g. a new state-management library, a new styling approach) when an existing one already covers the need.
-- **State**: keep state as local as it can be; lift it only when more than one component genuinely needs it. Avoid global state for anything that isn't actually global.
-- **Accessibility**: semantic HTML first; every interactive element keyboard-reachable and labeled; don't rely on color alone to convey state.
-- **Responsive design**: verify at more than one viewport width before calling a phase done — see the `run` skill or the project's own dev-server workflow for how to preview it live.
-- **Styling**: follow the project's existing approach (CSS modules, utility classes, styled components, whatever is already there) rather than mixing in a new one.
-- **Testing**: use the project's existing test runner and conventions; a UI phase isn't verified by type-checking alone — actually exercise the feature in a browser per this plan phase's verification step.
+Prose is the weakest layer. Each row names what enforces it. Rows enforced only by `prose` carry `promote-to-check: yes`: when a prose row is corrected twice, `qsdlc-correct` converts it to a lint rule, type, or test and records it in `rules.md`.
 
-## When this skill doesn't fit
+| Convention | Enforced by | promote-to-check |
+|---|---|---|
+| Match the project's component granularity and naming; add no new state or styling library when one exists | lint (import restrictions) where configured, else prose | yes |
+| Keep state local; lift only when more than one component needs it | prose | yes |
+| Semantic HTML first; interactive elements keyboard-reachable and labeled | lint (a11y rules such as jsx-a11y) and test (role queries) | no |
+| Do not rely on color alone for state | prose | yes |
+| Verify at more than one viewport width before a phase is done | test (viewport matrix in `eval.md`) | no |
+| Follow the project's existing styling approach | lint (stylelint or class rules) where configured, else prose | yes |
+| A UI phase is not verified by type-checking alone; exercise it in a browser | `qsdlc-qa` Mode 3 evidence manifest | no |
+| No suppression comments without reason, expiry, approver | hook and `qsdlc-lint` V11 | no |
 
-If the "web" work is really something else (e.g. a build tool, a static site generator config) — say so in `plan.md` rather than forcing these conventions where they don't apply.
+If a row says "where configured" and nothing is configured, the first correction should add the rule.
+
+## Verification for a phase
+
+Run the project's type check, lint, and test commands; save output under `evidence/`. For a visible change, drive the feature in a browser against local or staging data per `qsdlc-qa` Mode 3.
+
+## When this skill does not fit
+
+If the "web" work is really a build tool or static-site config, say so in `plan.md` and skip UI conventions.
 
 ## Extending
 
-To make this stack-specific (e.g. `qsdlc-dev-react`, `qsdlc-dev-svelte`), copy this file's shape and replace the generic conventions above with real ones for that stack. See the vault's `02 Skills/Developer Skills.md` for the pattern.
+To make this stack-specific (`qsdlc-dev-react`), copy this shape, replace the generic rows with real ones, and fill the Enforced by column with real rule names.

@@ -1,7 +1,7 @@
 {
   "name": "qsdlc",
-  "description": "Quintessence Software Development Lifecycle — a 5-stage skill library (Plan, Design, Build, Test, Deploy) for directing AI models and subagents through feature work consistently.",
-  "version": "1.0.0",
+  "description": "Quintessence Software Development Lifecycle v2: a Continuous Software Factory skill library. Five stages (Plan, Design, Build, Test, Deploy) with track sizing, interactive stage gates or autonomous scheduled factory loops (draft PRs only, never auto-merge), two-stage review, verification maps, a correction-to-check ratchet, deterministic lint and safety guards, qsdlc-present and html-motion HTML artifacts, qsdlc-herdr multi-agent relay orchestration, and qsdlc-archify + qsdlc-graphify codebase diagram and knowledge-graph tools.",
+  "version": "2.0.0",
   "author": {
     "name": "Trevorything"
   },

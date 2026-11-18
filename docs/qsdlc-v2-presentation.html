@@ -1,0 +1,2765 @@
+<!doctype html>
+<html lang="en" data-deck="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="brand-source" content="C:\Users\TrevorKoch\iCloudDrive\iCloud~md~obsidian\Q-Suite\20_Notes\Concepts\HTML Design Standard.md (Tier A)">
+<title>QSDLC v2 — Continuous Software Factory &amp; Motion Presentation Architecture</title>
+<!-- how this was made:
+  pipeline: qsdlc-present + html-motion (Inspect -> Bind -> Roll -> Pitch -> Build -> Verify)
+  roll: seed=3705826849 kind=design-pitch-deck slug=qsdlc-v2-overhaul archetype=compare-split narrative="problem -> vision -> proof" bi=before-after-slope motion=[draw,step-reveal] finish=[hairline-rules,tabular-numerals] signature=before-after-hinge
+  inspiration: Pinterest Swiss Grid editorial monograph (12-column modular grid, mono coordinate tags SYS.01..06, orthogonal 1px hairlines, single hi accent for focus path) + Awwwards sticky progression stage & interactive track switcher
+  engines: graph (SYS.01 control-plane relay), split (SYS.03 work-track router), expand (SYS.04 verification reach), streams (SYS.05 parallel lane cadences)
+  charts: Kit.chart slope (v1 baseline vs v2 overhaul), Kit.chart bar (290 verified self-tests across 5 suites), Diagram.layout (continuous factory DAG)
+-->
+<style id="tokens">
+:root {
+  --bg: #0C0714;
+  --surface: #140C21;
+  --panel: #1B1030;
+  --line: #2E2044;
+  --ink: #EDE7F5;
+  --muted: #A99BC0;
+  --hi: #A768F0;
+  --ok: #5BBF7A;
+  --alt: #D9A441;
+  --risk: #E5645A;
+  --brand: #852CDD;
+  --warn: #ECB851;
+  --accent: #D9A441;
+  --radius: 2px;
+  --border: 1px;
+  --shadow: none;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Liberation Mono", monospace;
+}
+</style>
+<!-- qsdlc-present:start -->
+<style>
+/* qsdlc-present: kit.css */
+/* kit.css — token-driven utilities for QSDLC stage artifacts.
+ * Consumes page tokens only: --bg --surface --panel --line --ink --muted --hi --ok --alt --risk
+ * plus shape/type tokens --radius --border --font-display --font-sans --font-mono (all have fallbacks).
+ * No colour literals, no font names. Progressive enhancement: [data-reveal] is hidden ONLY once
+ * Kit.reveal() has put the `js` class on <html>; without JS everything is visible.
+ */
+
+/* ---- focus (keyboard) ---- */
+:where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--hi, currentColor);
+  outline-offset: 2px;
+}
+
+/* ---- type utilities ---- */
+.eyebrow {
+  font: 600 11px/1.3 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.numeral {
+  font-family: var(--font-display, ui-serif, serif);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+.numeral-xl { font-size: clamp(3rem, 9vw, 7rem); }
+.muted { color: var(--muted); }
+.sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---- layout utilities (gap, not margin) ---- */
+.rule { border: 0; border-top: var(--border, 1px) solid var(--line); margin: 0; }
+.stack { display: flex; flex-direction: column; gap: var(--gap, 1rem); }
+.cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap, .75rem); }
+.grid-auto { display: grid; gap: var(--gap, 1rem); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.panel {
+  background: var(--surface); border: var(--border, 1px) solid var(--line);
+  border-radius: var(--radius, 2px); padding: 1rem 1.25rem;
+}
+
+/* Wide content scrolls itself; the page never scrolls sideways. */
+.table-wrap { overflow-x: auto; max-width: 100%; }
+.table-wrap table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.table-wrap :is(th, td) {
+  text-align: left; padding: .4rem .75rem; vertical-align: top;
+  border-bottom: var(--border, 1px) solid var(--line);
+}
+.table-wrap th {
+  font: 600 11px/1.3 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+}
+.table-wrap td.num, .table-wrap th.num { text-align: right; }
+
+/* Scroll-snap is always proximity, never mandatory (a tall section must stay readable). */
+.snap-y { scroll-snap-type: y proximity; }
+.snap-y > * { scroll-snap-align: start; }
+
+/* ---- charts (Kit.chart.*) and diagrams (Diagram.*) ---- */
+.kit-chart, .kit-diagram { margin: 0; display: flex; flex-direction: column; gap: .5rem; }
+.kit-cap {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem;
+  font: 600 13px/1.35 var(--font-sans, ui-sans-serif, system-ui, sans-serif); color: var(--ink);
+}
+.kit-illustrative {
+  font: 600 10px/1.2 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: .14em; text-transform: uppercase; color: var(--alt);
+  border: var(--border, 1px) solid currentColor; border-radius: var(--radius, 2px); padding: .1rem .35rem;
+}
+.kit-plot { overflow-x: auto; max-width: 100%; }
+/* scroll containers take keyboard focus (tabindex="0") so wide tables and diagrams can be scrolled without a mouse */
+.table-wrap:focus-visible, .kit-plot:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+.kit-plot > svg { display: block; width: 100%; height: auto; margin-inline: 0; }
+.kit-src { margin: 0; font: 400 12px/1.4 var(--font-mono, ui-monospace, monospace); color: var(--muted); }
+.kit-details > summary {
+  cursor: pointer; width: fit-content;
+  font: 600 11px/1.3 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+}
+.kit-details[open] > summary { color: var(--ink); }
+.kit-details .table-wrap { margin-top: .5rem; }
+.kit-details ul { margin: .5rem 0 0; padding-left: 1.1rem; color: var(--muted); font-size: 13px; }
+.kit-fps {
+  position: fixed; right: 8px; bottom: 8px; z-index: 99; pointer-events: none;
+  font: 600 11px/1 var(--font-mono, ui-monospace, monospace);
+  background: var(--panel); color: var(--ink); border: var(--border, 1px) solid var(--line); padding: 4px 6px;
+}
+
+/* ---- reveal: hidden only after JS has opted in ---- */
+html.js [data-reveal] {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity .5s ease, transform .5s ease;
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+html.js [data-reveal].is-in { opacity: 1; transform: none; }
+
+/* ---- scroll-linked reveal where the browser supports animation-timeline (JS opt-in via html.js) ---- */
+@keyframes kit-scrub { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@supports (animation-timeline: view()) {
+  html.js [data-scrub] {
+    animation: kit-scrub linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 35%;
+  }
+}
+
+/* ---- reduced motion: every state is its final frame ---- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important;
+  }
+  [data-reveal], html.js [data-reveal] { opacity: 1 !important; transform: none !important; transition: none !important; }
+  html.js [data-scrub] { animation: none !important; opacity: 1; transform: none; }
+}
+
+/* ---- print: show everything, drop chrome ---- */
+@media print {
+  [data-reveal], html.js [data-reveal], html.js [data-scrub] { opacity: 1 !important; transform: none !important; animation: none !important; }
+  .kit-fps { display: none; }
+  .table-wrap, .kit-plot { overflow: visible; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+<script>
+/* qsdlc-present: kit.js */
+/* kit.js — zero-dependency motion + BI chart kit for QSDLC stage artifacts.
+ * UMD: browser global `Kit`, or `require('./kit.js')` / `import Kit from './kit.js'` in Node (no DOM needed for Kit.chart.svg).
+ * Colours are ONLY var(--token) / currentColor: --bg --surface --panel --line --ink --muted --hi --ok --alt --risk.
+ *
+ * PURE STRING CORE (testable in Node)
+ *   Kit.chart.svg(type, spec) -> '<figure class="kit-chart" data-chart=TYPE data-source=...>'
+ *       <figcaption class="kit-cap"> + [<span class="kit-illustrative">Illustrative data</span>]
+ *       <div class="kit-plot"><svg role="img" aria-labelledby="ID-t ID-d"><title/><desc/>…</svg></div>
+ *       <p class="kit-src">  +  <details class="kit-details"><summary>Data table</summary><div class="table-wrap" tabindex="0"><table>…
+ *   Common spec: {title, desc, source, illustrative:bool, unit, width}. data-source = spec.source | 'illustrative' | 'unspecified'.
+ *   bar       {data:[{label,value,tone?}], target?, max?, sort?:'asc'|'desc'}            horizontal bars, direct value labels
+ *   stacked   {series:[{label,tone}], data:[{label, values:[n,…]}]}                       100% bars, legend with values under each bar
+ *   strip     {data:[{label, values:[n,…]}], marks?:[50,95,99]}                           dot strip + percentile ticks (p50/p95/p99)
+ *   slope     {data:[{label,from,to}], fromLabel, toLabel, better?:'higher'|'lower'}      before/after with delta labels
+ *   spark     {series:[{label,data:[n,…]}]} | {data:[n,…]}, shared?:false (true = one scale for all rows)                  faceted sparklines, last value labelled
+ *   bullet    {data:[{label,value,target,max?,bands?:[a,b]}]}                             value vs target on qualitative bands
+ *   heatmap   {rows:[..], cols:[..], cells:[[status|number,…]]}  status: pass|fail|skip|warn (glyph + tone); number 0..1 (intensity)
+ *   waterfall {data:[{label,value,total?:true}]}                                          running delta; totals use --hi
+ * DOM WRAPPERS
+ *   Kit.chart.bar(el, spec) … (one per type; sets el.innerHTML)    Kit.chart.mount(root)  renders every
+ *   <script type="application/json" data-chart="TYPE" [data-target="#id"]> (figure inserted after the script, or into the target).
+ *   Kit.chart.animate(root) grows bars (`<g data-grow>`) and draws sparklines (`path.kit-line`).
+ * MOTION (each returns {start, stop, redraw, drawAt(t)}; all are pure functions of t in 0..1)
+ *   Kit.reveal(root)  Kit.draw(path,{dur}) Kit.grow(g,{dur,axis}) Kit.count(el,{to,from,dur,decimals,format,prefix,suffix})
+ *   Kit.flow(path,n,{dur,r}) Kit.scrub(el,fn,{pin}) Kit.init(root)  (init = mount + animate + reveal + [data-count] + ?fps)
+ * QUERY STRING: ?t=0..1 freezes every drawAt primitive at that fraction (and shows all reveals); ?freeze=1 stops loops (final frame);
+ *   ?fps=1 shows a frame-rate readout. prefers-reduced-motion paints the final frame. Primitives start when scrolled into view,
+ *   so screenshot tools should use ?t=1 or ?freeze=1 rather than relying on scrolling.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Kit = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var NS = 'http://www.w3.org/2000/svg';
+  /* ids are a hash of the spec, so rendering is a pure function of its input (stable pre-render, idempotent inline) */
+  function hid(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); }
+  var TONES = { ink: 1, muted: 1, line: 1, hi: 1, ok: 1, alt: 1, risk: 1, surface: 1, panel: 1, bg: 1 };
+  var CYCLE = ['hi', 'ok', 'alt', 'risk', 'muted'];
+
+  /* ------------------------------------------------------------ helpers */
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function r1(n) { return Math.round(n * 10) / 10; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function tok(t) { return 'var(--' + (TONES[t] ? t : 'hi') + ')'; }
+  function mix(t, p) { return 'color-mix(in srgb,' + tok(t) + ' ' + p + '%,transparent)'; }
+  function num(n, d) {
+    if (typeof n !== 'number' || !isFinite(n)) return String(n == null ? '' : n);
+    d = d == null ? (n % 1 && Math.abs(n) < 100 ? 1 : 0) : d;
+    return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: d });
+  }
+  function withUnit(n, u) { u = u || ''; return u === '%' ? num(n) + '%' : u ? num(n) + ' ' + u : num(n); }
+  function trunc(s, n) { s = String(s == null ? '' : s); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  function niceMax(v) {
+    if (!(v > 0)) return 1;
+    var p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p;
+    return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+  }
+  function pct(sorted, p) {
+    if (!sorted.length) return 0;
+    var i = (sorted.length - 1) * p / 100, lo = Math.floor(i), hi = Math.ceil(i);
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
+  }
+  function T(x, y, s, o) {
+    o = o || {};
+    return '<text x="' + r1(x) + '" y="' + r1(y) + '" text-anchor="' + (o.a || 'start') + '"' + (o.rot ? ' transform="rotate(' + o.rot + ' ' + r1(x) + ' ' + r1(y) + ')"' : '') +
+      ' style="fill:' + (o.c || 'var(--ink)') + ';font:' + (o.w || 400) + ' ' + (o.s || 12) + 'px ' +
+      (o.mono ? 'var(--font-mono,ui-monospace,monospace)' : 'var(--font-sans,ui-sans-serif,system-ui,sans-serif)') +
+      ';font-variant-numeric:tabular-nums' + (o.up ? ';text-transform:uppercase;letter-spacing:.08em' : '') + '">' + esc(s) + '</text>';
+  }
+  function L(x1, y1, x2, y2, c, w, dash) {
+    return '<line x1="' + r1(x1) + '" y1="' + r1(y1) + '" x2="' + r1(x2) + '" y2="' + r1(y2) + '" style="stroke:' + (c || 'var(--line)') + ';stroke-width:' + (w || 1) + (dash ? ';stroke-dasharray:' + dash : '') + '"/>';
+  }
+  function R(x, y, w, h, fill, extra) {
+    return '<rect x="' + r1(x) + '" y="' + r1(y) + '" width="' + r1(Math.max(0, w)) + '" height="' + r1(Math.max(0, h)) + '" style="fill:' + fill + '"' + (extra || '') + '/>';
+  }
+  function table(head, rows, cap) {
+    return '<table><caption class="sr">' + esc(cap) + '</caption><thead><tr>' + head.map(function (h, i) { return '<th scope="col"' + (i ? ' class="num"' : '') + '>' + esc(h) + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return i ? '<td class="num">' + esc(c) + '</td>' : '<th scope="row">' + esc(c) + '</th>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+  }
+  /* Wraps body in the standard figure. */
+  function frame(type, spec, W, H, body, tbl, auto, minW) {
+    var id = 'kc' + (spec.id ? String(spec.id).replace(/[^\w-]/g, '') : hid(type + JSON.stringify(spec))), ill = spec.illustrative;
+    var src = spec.source || (ill ? 'illustrative' : 'unspecified');
+    var title = spec.title || (type + ' chart');
+    return '<figure class="kit-chart" data-chart="' + type + '" data-source="' + esc(src) + '"' + (ill ? ' data-illustrative="true"' : '') + '>' +
+      '<figcaption class="kit-cap"><span class="kit-title">' + esc(spec.title || '') + '</span>' + (ill ? '<span class="kit-illustrative">Illustrative data</span>' : '') + '</figcaption>' +
+      '<div class="kit-plot"><svg viewBox="0 0 ' + r1(W) + ' ' + r1(H) + '" role="img" aria-labelledby="' + id + '-t ' + id + '-d" style="max-width:' + Math.round(W * 1.4) + 'px;min-width:min(100%,' + (minW || 400) + 'px)">' +
+      '<title id="' + id + '-t">' + esc(title) + '</title><desc id="' + id + '-d">' + esc(spec.desc || auto) + '</desc>' + body + '</svg></div>' +
+      (spec.source ? '<p class="kit-src">Source: ' + esc(spec.source) + '</p>' : '') +
+      '<details class="kit-details"><summary>Data table</summary><div class="table-wrap" tabindex="0">' + tbl + '</div></details></figure>';
+  }
+  function axisTicks(x0, x1, y, max, unit, n) {
+    var s = '';
+    for (var i = 0; i <= n; i++) {
+      var x = x0 + (x1 - x0) * i / n;
+      s += L(x, 4, x, y, 'var(--line)', 1) + T(x, y + 14, withUnit(max * i / n, unit), { a: i === 0 ? 'start' : i === n ? 'end' : 'middle', c: 'var(--muted)', s: 11 });
+    }
+    return s;
+  }
+
+  /* ------------------------------------------------------------ charts */
+  var charts = {};
+
+  charts.bar = function (spec) {
+    var d = (spec.data || []).slice();
+    if (spec.sort) d.sort(function (a, b) { return spec.sort === 'asc' ? a.value - b.value : b.value - a.value; });
+    var W = spec.width || 480, labW = clamp(d.reduce(function (m, x) { return Math.max(m, String(x.label).length); }, 0) * 6.4 + 8, 60, 168);
+    var padR = 64, rowH = 30, top = 6, plotW = W - labW - padR;
+    var max = spec.max || niceMax(Math.max.apply(null, d.map(function (x) { return x.value; }).concat(spec.target || 0)));
+    var mant = max / Math.pow(10, Math.floor(Math.log10(max))), H = top + d.length * rowH + 26, s = axisTicks(labW, labW + plotW, top + d.length * rowH, max, spec.unit, mant === 2 || mant === 4 ? 4 : 5), bars = '';
+    d.forEach(function (x, i) {
+      var y = top + i * rowH, w = x.value / max * plotW, tn = x.tone || 'hi';
+      s += T(labW - 8, y + 19, trunc(x.label, 26), { a: 'end' });
+      bars += R(labW, y + 6, w, 18, tok(tn), ' data-i="' + i + '"');
+      s += T(labW + w + 6, y + 19, withUnit(x.value, spec.unit), { w: 600, mono: 1, s: 11.5 });
+    });
+    s += '<g data-grow data-axis="x">' + bars + '</g>';
+    if (spec.target != null) {
+      var tx = labW + spec.target / max * plotW;
+      s += L(tx, top - 2, tx, top + d.length * rowH, 'var(--ink)', 1.5, '4 3') + T(tx, H - 2, 'target ' + withUnit(spec.target, spec.unit), { a: 'middle', c: 'var(--muted)', s: 10.5 });
+    }
+    var hi = d.reduce(function (m, x) { return x.value > m.value ? x : m; }, d[0] || { label: '', value: 0 });
+    return frame('bar', spec, W, H, s, table(['Item', 'Value'], d.map(function (x) { return [x.label, withUnit(x.value, spec.unit)]; }), spec.title || 'Bar chart'),
+      'Bar chart of ' + d.length + ' items; largest is ' + hi.label + ' at ' + withUnit(hi.value, spec.unit) + '.');
+  };
+
+  charts.stacked = function (spec) {
+    var ser = spec.series || [], d = spec.data || [], W = spec.width || 480, rowH = 62, barW = W - 20, s = '', bars = '';
+    d.forEach(function (row, i) {
+      var y = 4 + i * rowH, tot = row.values.reduce(function (a, b) { return a + b; }, 0) || 1, x = 10, lx = 10;
+      s += T(10, y + 12, row.label, { w: 600 });
+      row.values.forEach(function (v, k) {
+        var w = v / tot * barW, sr = ser[k] || {}, tn = sr.tone || CYCLE[k % CYCLE.length];
+        bars += R(x, y + 20, Math.max(0, w - 1.5), 16, tok(tn), ' data-i="' + (i * 10 + k) + '"');
+        x += w;
+        var lab = (sr.label || 'Series ' + (k + 1)) + ' ' + num(v) + ' (' + num(v / tot * 100) + '%)';
+        s += R(lx, y + 45, 8, 8, tok(tn)) + T(lx + 12, y + 53, lab, { s: 11, c: 'var(--muted)' });
+        lx += 12 + lab.length * 5.9 + 14;
+      });
+    });
+    s += '<g data-grow data-axis="x">' + bars + '</g>';
+    var head = ['Group'].concat(ser.map(function (x) { return x.label; })).concat(['Total']);
+    var rows = d.map(function (r) { return [r.label].concat(r.values.map(num), [num(r.values.reduce(function (a, b) { return a + b; }, 0))]); });
+    return frame('stacked', spec, W, 4 + d.length * rowH + 4, s, table(head, rows, spec.title || 'Stacked bar'),
+      'Proportional stacked bars for ' + d.length + ' groups across ' + ser.length + ' categories.');
+  };
+
+  charts.strip = function (spec) {
+    var d = spec.data || [], marks = spec.marks || [50, 95, 99], W = spec.width || 480, labW = 0, padR = 20, rowH = 66;
+    var all = []; d.forEach(function (x) { all = all.concat(x.values); });
+    var max = spec.max || niceMax(Math.max.apply(null, all.concat(0))), x0 = 12, x1 = W - padR, s = '', head = ['Series', 'n'].concat(marks.map(function (m) { return 'p' + m; })), rows = [];
+    var mt = ['ink', 'hi', 'risk'];
+    d.forEach(function (row, i) {
+      var y = 4 + i * rowH, sv = row.values.slice().sort(function (a, b) { return a - b; }), cy = y + 34, line = '';
+      s += T(x0, y + 12, row.label, { w: 600 }) + L(x0, cy, x1, cy, 'var(--line)', 1);
+      sv.forEach(function (v, k) { line += '<circle cx="' + r1(x0 + v / max * (x1 - x0)) + '" cy="' + r1(cy + ((k * 37) % 9) - 4) + '" r="2.6" style="fill:' + mix('hi', 45) + '"/>'; });
+      s += line;
+      var lx = x0, vals = [];
+      marks.forEach(function (m, k) {
+        var v = pct(sv, m), x = x0 + v / max * (x1 - x0), c = tok(mt[k % 3]);
+        vals.push(num(v, 1));
+        s += L(x, cy - 12, x, cy + 12, c, 2);
+        var lab = 'p' + m + ' ' + withUnit(v, spec.unit);
+        s += L(lx, y + 58, lx + 8, y + 58, c, 2) + T(lx + 12, y + 61, lab, { s: 11, c: 'var(--muted)', mono: 1 });
+        lx += 12 + lab.length * 6.8 + 14;
+      });
+      rows.push([row.label, sv.length].concat(vals.map(function (v) { return withUnit(+v.replace(/,/g, ''), spec.unit); })));
+    });
+    var H = 4 + d.length * rowH + 4 + 22;
+    var ax = '';
+    [0, 0.5, 1].forEach(function (f) { ax += T(x0 + f * (x1 - x0), H - 4, withUnit(max * f, spec.unit), { a: f === 0 ? 'start' : f === 1 ? 'end' : 'middle', s: 10.5, c: 'var(--muted)' }); });
+    return frame('strip', spec, W, H, s + ax, table(head, rows, spec.title || 'Distribution'),
+      'Dot strip of ' + d.length + ' distributions with ' + marks.map(function (m) { return 'p' + m; }).join(', ') + ' markers.');
+  };
+
+  charts.slope = function (spec) {
+    var d = spec.data || [], W = spec.width || 480, xl = 168, xr = W - 168, top = 34, H = Math.max(180, d.length * 30 + 60), better = spec.better || 'higher';
+    var vs = []; d.forEach(function (x) { vs.push(x.from, x.to); });
+    var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs), span = hi - lo || 1, y = function (v) { return top + (hi - v) / span * (H - top - 24); };
+    function spread(a) { // nudge label y's apart (min gap 15)
+      var o = a.map(function (v, i) { return { i: i, y: v }; }).sort(function (p, q) { return p.y - q.y; });
+      for (var k = 1; k < o.length; k++) if (o[k].y - o[k - 1].y < 15) o[k].y = o[k - 1].y + 15;
+      var out = []; o.forEach(function (p) { out[p.i] = p.y; }); return out;
+    }
+    var ly = spread(d.map(function (x) { return y(x.from); })), ry = spread(d.map(function (x) { return y(x.to); }));
+    var s = T(xl, 14, spec.fromLabel || 'Before', { a: 'end', w: 600, c: 'var(--muted)', mono: 1, s: 11, up: 1 }) + T(xr, 14, spec.toLabel || 'After', { w: 600, c: 'var(--muted)', mono: 1, s: 11, up: 1 }) + L(xl, top - 6, xl, H - 18) + L(xr, top - 6, xr, H - 18), rows = [];
+    d.forEach(function (x, i) {
+      var dl = x.to - x.from, good = better === 'higher' ? dl >= 0 : dl <= 0, tn = dl === 0 ? 'muted' : good ? 'ok' : 'risk';
+      var dtxt = (dl > 0 ? '+' : dl < 0 ? '−' : '') + num(Math.abs(dl)) + (spec.unit === '%' ? ' pts' : spec.unit ? ' ' + spec.unit : '');
+      s += '<line x1="' + xl + '" y1="' + r1(y(x.from)) + '" x2="' + xr + '" y2="' + r1(y(x.to)) + '" style="stroke:' + tok(tn) + ';stroke-width:2" class="kit-line"/>' +
+        '<circle cx="' + xl + '" cy="' + r1(y(x.from)) + '" r="3.5" style="fill:' + tok(tn) + '"/><circle cx="' + xr + '" cy="' + r1(y(x.to)) + '" r="3.5" style="fill:' + tok(tn) + '"/>' +
+        T(xl - 10, ly[i] + 4, trunc(x.label, 18) + '  ' + withUnit(x.from, spec.unit), { a: 'end', s: 11.5 }) +
+        T(xr + 10, ry[i] + 4, withUnit(x.to, spec.unit) + '  ' + dtxt, { s: 11.5, w: 600, c: 'var(--ink)' });
+      rows.push([x.label, withUnit(x.from, spec.unit), withUnit(x.to, spec.unit), dtxt]);
+    });
+    return frame('slope', spec, W, H, s, table(['Item', spec.fromLabel || 'Before', spec.toLabel || 'After', 'Change'], rows, spec.title || 'Slope'),
+      'Slope chart of ' + d.length + ' items from ' + (spec.fromLabel || 'before') + ' to ' + (spec.toLabel || 'after') + '.');
+  };
+
+  charts.spark = function (spec) {
+    var ser = spec.series || [{ label: spec.title || 'Series', data: spec.data || [] }], W = spec.width || 480, labW = 128, padR = 70, rowH = 34, s = '', rows = [];
+    var shared = spec.shared === true, all = []; ser.forEach(function (x) { all = all.concat(x.data); });
+    var gmin = Math.min.apply(null, all), gmax = Math.max.apply(null, all);
+    ser.forEach(function (sr, i) {
+      var d = sr.data, mn = shared ? gmin : Math.min.apply(null, d), mx = shared ? gmax : Math.max.apply(null, d), sp = mx - mn || 1, y0 = 6 + i * rowH, pw = W - labW - padR, pts = [];
+      d.forEach(function (v, k) { pts.push([labW + (d.length > 1 ? k / (d.length - 1) : 1) * pw, y0 + 4 + (mx - v) / sp * (rowH - 14)]); });
+      s += T(labW - 10, y0 + 18, trunc(sr.label, 18), { a: 'end' }) + L(labW, y0 + rowH - 4, labW + pw, y0 + rowH - 4, 'var(--line)', 1) +
+        '<path class="kit-line" d="M' + pts.map(function (p) { return r1(p[0]) + ' ' + r1(p[1]); }).join('L') + '" style="fill:none;stroke:var(--hi);stroke-width:2;stroke-linejoin:round;stroke-linecap:round"/>';
+      var e = pts[pts.length - 1] || [labW, y0];
+      s += '<circle cx="' + r1(e[0]) + '" cy="' + r1(e[1]) + '" r="3.2" style="fill:var(--hi)"/>' + T(labW + pw + 10, y0 + 18, withUnit(d[d.length - 1], spec.unit), { w: 600, mono: 1, s: 11.5 });
+      rows.push([sr.label, num(d[0]), num(Math.min.apply(null, d)), num(Math.max.apply(null, d)), num(d[d.length - 1])]);
+    });
+    return frame('spark', spec, W, ser.length * rowH + 12, s, table(['Series', 'First', 'Min', 'Max', 'Last'], rows, spec.title || 'Sparklines'),
+      'Sparklines for ' + ser.length + ' series' + (shared ? ' on a shared scale' : '') + ', each labelled with its latest value.', 380);
+  };
+
+  charts.bullet = function (spec) {
+    var d = spec.data || [], W = spec.width || 480, labW = 128, padR = 96, rowH = 36, s = '', rows = [], bars = '', pw = W - labW - padR;
+    d.forEach(function (x, i) {
+      var max = x.max || niceMax(Math.max(x.value, x.target || 0) * 1.1), y = 6 + i * rowH, b = x.bands || [x.target * 0.7, x.target], ok = x.target == null || x.value >= x.target;
+      s += T(labW - 10, y + 20, trunc(x.label, 18), { a: 'end' });
+      [[max, 14], [b[1], 24], [b[0], 36]].forEach(function (k) { s += R(labW, y + 6, k[0] / max * pw, 20, mix('ink', k[1] === 14 ? 5 : k[1] === 24 ? 9 : 14)); });
+      bars += R(labW, y + 12, x.value / max * pw, 8, tok(x.tone || (ok ? 'ok' : 'risk')), ' data-i="' + i + '"');
+      if (x.target != null) s += L(labW + x.target / max * pw, y + 6, labW + x.target / max * pw, y + 26, 'var(--ink)', 2.5);
+      s += T(labW + pw + 10, y + 20, withUnit(x.value, spec.unit) + (x.target != null ? ' / ' + withUnit(x.target, spec.unit) : ''), { mono: 1, s: 11, w: 600 });
+      rows.push([x.label, withUnit(x.value, spec.unit), x.target != null ? withUnit(x.target, spec.unit) : '', x.target == null ? '' : ok ? 'meets target' : 'below target']);
+    });
+    s += '<g data-grow data-axis="x">' + bars + '</g>';
+    return frame('bullet', spec, W, d.length * rowH + 14, s, table(['Measure', 'Value', 'Target', 'Status'], rows, spec.title || 'Bullet'),
+      'Bullet chart of ' + d.length + ' measures; thick tick marks the target.');
+  };
+
+  var GLYPH = {
+    pass: function (x, y, c) { return '<path d="M' + (x - 5) + ' ' + y + 'l4 4 7-8" style="fill:none;stroke:' + c + ';stroke-width:2"/>'; },
+    fail: function (x, y, c) { return '<path d="M' + (x - 4.5) + ' ' + (y - 4.5) + 'l9 9m0-9l-9 9" style="fill:none;stroke:' + c + ';stroke-width:2"/>'; },
+    skip: function (x, y, c) { return '<path d="M' + (x - 5) + ' ' + y + 'h10" style="fill:none;stroke:' + c + ';stroke-width:2"/>'; },
+    warn: function (x, y, c) { return '<path d="M' + x + ' ' + (y - 5) + 'v6" style="fill:none;stroke:' + c + ';stroke-width:2"/><circle cx="' + x + '" cy="' + (y + 5) + '" r="1.4" style="fill:' + c + '"/>'; }
+  };
+  var STAT = { pass: 'ok', fail: 'risk', skip: 'muted', warn: 'alt' };
+  charts.heatmap = function (spec) {
+    var rowsL = spec.rows || [], cols = spec.cols || [], cells = spec.cells || [], cw = 28, labW = clamp(rowsL.reduce(function (m, x) { return Math.max(m, String(x).length); }, 0) * 6.4 + 12, 60, 168);
+    var hh = clamp(cols.reduce(function (m, x) { return Math.max(m, String(x).length); }, 0) * 4.6 + 16, 24, 76), W = Math.max(spec.width || 0, labW + cols.length * cw + 56), s = '', body = [];
+    cols.forEach(function (c, j) { s += T(labW + j * cw + cw / 2, hh - 6, trunc(c, 14), { rot: -45, s: 10.5, c: 'var(--muted)' }); });
+    rowsL.forEach(function (rl, i) {
+      var y = hh + i * cw, line = [rl];
+      s += T(labW - 8, y + cw / 2 + 4, trunc(rl, 26), { a: 'end', s: 11.5 });
+      cols.forEach(function (c, j) {
+        var v = (cells[i] || [])[j], x = labW + j * cw, cx = x + cw / 2, cy = y + cw / 2, st = typeof v === 'string' ? (STAT[v] ? v : 'skip') : null;
+        if (st) s += R(x + 1, y + 1, cw - 2, cw - 2, mix(STAT[st], 22)) + GLYPH[st](cx, cy, tok(STAT[st]));
+        else { var f = clamp(+v || 0, 0, 1); s += R(x + 1, y + 1, cw - 2, cw - 2, mix('hi', 8 + f * 47)) + T(cx, cy + 4, String(Math.round(f * 100)), { a: 'middle', s: 9.5, mono: 1 }); }
+        line.push(typeof v === 'string' ? v : num(+v || 0, 2));
+      });
+      body.push(line);
+    });
+    return frame('heatmap', spec, W, hh + rowsL.length * cw + 8, s, table([spec.corner || 'Item'].concat(cols), body, spec.title || 'Heatmap'),
+      'Heatmap of ' + rowsL.length + ' rows by ' + cols.length + ' columns; each cell shows a status glyph or a percentage.', 340);
+  };
+
+  charts.waterfall = function (spec) {
+    var d = spec.data || [], W = spec.width || 480, left = 10, padB = 46, H = 230, top = 22, run = 0, steps = [], lo = 0, hi = 0;
+    d.forEach(function (x) { var a = x.total ? 0 : run, b = x.total ? x.value : run + x.value; run = b; steps.push([a, b]); lo = Math.min(lo, a, b); hi = Math.max(hi, a, b); });
+    var span = hi - lo || 1, ph = H - top - padB, y = function (v) { return top + (hi - v) / span * ph; }, cw = (W - left * 2) / Math.max(1, d.length), s = L(left, y(0), W - left, y(0), 'var(--muted)', 1), bars = '', rows = [];
+    d.forEach(function (x, i) {
+      var st = steps[i], x0 = left + i * cw + cw * 0.16, w = cw * 0.68, yt = y(Math.max(st[0], st[1])), hgt = Math.abs(y(st[0]) - y(st[1])), tn = x.total ? 'hi' : x.value >= 0 ? 'ok' : 'risk';
+      bars += R(x0, yt, w, Math.max(1.5, hgt), tok(tn), ' data-i="' + i + '"');
+      var lab = x.total ? num(x.value) : (x.value >= 0 ? '+' : '−') + num(Math.abs(x.value)), up = x.total || x.value >= 0;
+      s += T(x0 + w / 2, up ? yt - 5 : yt + hgt + 12, lab, { a: 'middle', mono: 1, w: 600, s: 11 }) +
+        T(x0 + w / 2, H - padB + 16, trunc(x.label, Math.max(5, Math.floor(cw / 6.4))), { a: 'middle', s: 10.5, c: 'var(--muted)' });
+      if (i < d.length - 1) s += L(x0 + w, y(st[1]), x0 + cw, y(st[1]), 'var(--muted)', 1, '2 3');
+      rows.push([x.label, x.total ? 'total ' + num(x.value) : (x.value >= 0 ? '+' : '−') + num(Math.abs(x.value)), num(st[1])]);
+    });
+    s += '<g data-grow data-axis="y">' + bars + '</g>';
+    return frame('waterfall', spec, W, H, s, table(['Step', 'Change', 'Running total'], rows, spec.title || 'Waterfall'),
+      'Waterfall of ' + d.length + ' steps ending at ' + num(run) + '; green steps add, red steps subtract.', 360);
+  };
+
+  function svg(type, spec) {
+    if (!charts[type]) throw new Error('Kit.chart: unknown type "' + type + '" (' + Object.keys(charts).join(', ') + ')');
+    return charts[type](spec || {});
+  }
+  var chart = { svg: svg, types: Object.keys(charts) };
+  Object.keys(charts).forEach(function (t) { chart[t] = function (el, spec) { el.innerHTML = svg(t, spec); return el; }; });
+  chart.mount = function (rootEl) {
+    rootEl = rootEl || document;
+    [].slice.call(rootEl.querySelectorAll('script[type="application/json"][data-chart]')).forEach(function (sc) {
+      if (sc.getAttribute('data-mounted')) return;
+      var html; try { html = svg(sc.getAttribute('data-chart'), JSON.parse(sc.textContent)); } catch (e) { if (typeof console !== 'undefined') console.error('Kit.chart.mount:', e.message); return; }
+      var tg = sc.getAttribute('data-target'), el = tg && document.querySelector(tg);
+      if (el) el.innerHTML = html; else sc.insertAdjacentHTML('afterend', html);
+      sc.setAttribute('data-mounted', '1');
+    });
+  };
+  chart.animate = function (rootEl) {
+    rootEl = rootEl || document;
+    [].slice.call(rootEl.querySelectorAll('.kit-chart g[data-grow]')).forEach(function (g) { if (!g.__kit) g.__kit = grow(g); });
+    [].slice.call(rootEl.querySelectorAll('.kit-chart path.kit-line')).forEach(function (p) { if (!p.__kit) p.__kit = draw(p); });
+  };
+
+  /* ------------------------------------------------------------ motion core */
+  var live = [], fpsEl = null;
+  function env() {
+    var q = null, reduce = false;
+    try { q = new URLSearchParams(location.search); } catch (e) { /* no DOM */ }
+    try { reduce = !!(typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { /* ignore */ }
+    var t = q && q.get('t'); t = t != null && t !== '' && isFinite(+t) ? clamp(+t, 0, 1) : null;
+    return { t: t, freeze: !!q && q.get('freeze') === '1', fps: !!q && q.get('fps') === '1', reduce: reduce };
+  }
+  function ease(t) { return 1 - Math.pow(1 - t, 3); }
+  function whenVisible(el, fn) {
+    if (typeof IntersectionObserver !== 'function' || !el) return fn();
+    var io = new IntersectionObserver(function (es) { if (es.some(function (e) { return e.isIntersecting; })) { io.disconnect(); fn(); } }, { threshold: 0.15 });
+    io.observe(el);
+  }
+  function fpsInit() {
+    if (fpsEl || !env().fps || typeof document === 'undefined' || !document.body) return;
+    fpsEl = document.createElement('div'); fpsEl.className = 'kit-fps'; fpsEl.textContent = 'fps …'; document.body.appendChild(fpsEl);
+    var n = 0, t0 = performance.now();
+    (function tick(now) { n++; if (now - t0 >= 500) { fpsEl.textContent = Math.round(n * 1000 / (now - t0)) + ' fps'; n = 0; t0 = now; } requestAnimationFrame(tick); })(t0);
+  }
+  /* A primitive: draw(t) is a pure function of t∈[0,1]; o = {dur, loop, still}. */
+  function make(el, draw, o) {
+    var raf = 0, running = false, cur = 0, e = env();
+    var api = {
+      drawAt: function (t) { cur = t; draw(t); },
+      redraw: function () { draw(cur); },
+      stop: function () { running = false; if (raf) cancelAnimationFrame(raf); },
+      start: function () {
+        var en = env();
+        if (en.t != null) { api.drawAt(en.t); return api; }
+        if (en.reduce || en.freeze) { api.drawAt(o.loop ? (o.still || 0) : 1); return api; }
+        running = true; var t0 = 0;
+        raf = requestAnimationFrame(function tick(now) {
+          if (!running) return;
+          if (!t0) t0 = now;
+          var p = (now - t0) / o.dur;
+          if (o.loop) p = p % 1; else p = Math.min(1, p);
+          api.drawAt(o.loop ? p : ease(p));
+          if (!o.loop && p >= 1) { running = false; return; }
+          raf = requestAnimationFrame(tick);
+        });
+        return api;
+      }
+    };
+    live.push(api);
+    if (e.t != null || e.freeze || e.reduce) api.start();
+    else { api.drawAt(0); whenVisible(el, api.start); }
+    return api;
+  }
+
+  function draw(path, o) {
+    o = o || {};
+    var len = path.getTotalLength ? path.getTotalLength() : 0;
+    return make(path, function (t) {
+      if (t >= 1) { path.style.strokeDasharray = ''; path.style.strokeDashoffset = ''; return; }
+      path.style.strokeDasharray = len; path.style.strokeDashoffset = len * (1 - t);
+    }, { dur: o.dur || 900 });
+  }
+
+  function grow(g, o) {
+    o = o || {};
+    var axis = o.axis || g.getAttribute('data-axis') || 'x', kids = [].slice.call(g.children), stag = o.stagger == null ? 0.5 : o.stagger, n = kids.length || 1;
+    kids.forEach(function (k) { k.style.transformBox = 'fill-box'; k.style.transformOrigin = axis === 'x' ? '0 50%' : '50% 100%'; });
+    return make(g, function (t) {
+      kids.forEach(function (k, i) {
+        var p = clamp((t - i / n * stag) / (1 - stag), 0, 1);
+        k.style.transform = p >= 1 ? '' : (axis === 'x' ? 'scaleX(' : 'scaleY(') + p + ')';
+      });
+    }, { dur: o.dur || 800 });
+  }
+
+  function count(el, o) {
+    o = o || {};
+    var raw = o.to != null ? o.to : parseFloat(el.getAttribute('data-count') != null ? el.getAttribute('data-count') : String(el.textContent).replace(/[^0-9.\-]/g, ''));
+    if (!isFinite(raw)) return null;                       // never animate non-numeric text
+    var from = o.from != null ? o.from : +(el.getAttribute('data-from') || 0), dec = o.decimals != null ? o.decimals : +(el.getAttribute('data-decimals') || 0);
+    var pre = o.prefix != null ? o.prefix : el.getAttribute('data-prefix') || '', suf = o.suffix != null ? o.suffix : el.getAttribute('data-suffix') || '';
+    var fmt = typeof o.format === 'function' ? o.format : function (v) { return pre + v.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + suf; };
+    el.classList.add('numeral'); el.style.fontVariantNumeric = 'tabular-nums';
+    el.textContent = fmt(raw);                              // final value is the no-JS / reduced-motion fallback
+    return make(el, function (t) { el.textContent = fmt(t >= 1 ? raw : from + (raw - from) * t); }, { dur: o.dur || 1100 });
+  }
+
+  function flow(path, n, o) {
+    o = o || {}; n = n || 3;
+    var len = path.getTotalLength(), host = path.parentNode, dots = [];
+    for (var i = 0; i < n; i++) {
+      var c = document.createElementNS(NS, 'circle');
+      c.setAttribute('r', o.r || 3.5); c.setAttribute('class', 'kit-dot'); c.setAttribute('aria-hidden', 'true'); c.style.fill = 'var(--hi)';
+      host.insertBefore(c, path.nextSibling); dots.push(c);
+    }
+    return make(path, function (t) {
+      dots.forEach(function (c, k) { var p = path.getPointAtLength((((t + k / n) % 1) + 1) % 1 * len); c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); });
+    }, { dur: o.dur || 4000, loop: true, still: 0 });
+  }
+
+  /* Scroll-linked progress. fn(p) with p∈[0,1]. {pin:true} measures a tall sticky container (0 at its top, 1 when its end hits the viewport bottom).
+   * (CSS-only scroll-linked reveal for [data-scrub] lives in kit.css under @supports (animation-timeline: view()); this is the JS/fallback path.) */
+  function scrub(el, fn, o) {
+    o = o || {};
+    function prog() {
+      var r = el.getBoundingClientRect(), vh = innerHeight || 1;
+      return clamp(o.pin ? -r.top / Math.max(1, r.height - vh) : (vh - r.top) / (vh + r.height), 0, 1);
+    }
+    var cur = 0, ticking = false, e = env();
+    var api = { drawAt: function (t) { cur = t; fn(t); }, redraw: function () { fn(cur); }, stop: function () { removeEventListener('scroll', onS); }, start: function () { return api; } };
+    function onS() { if (ticking) return; ticking = true; requestAnimationFrame(function () { ticking = false; api.drawAt(prog()); }); }
+    if (e.t != null) api.drawAt(e.t);
+    else if (e.reduce || e.freeze) api.drawAt(1);
+    else { addEventListener('scroll', onS, { passive: true }); addEventListener('resize', onS); api.drawAt(prog()); }
+    live.push(api);
+    return api;
+  }
+
+  /* Adds `js` to <html>; [data-reveal] elements fade in (stagger via --i) when scrolled into view. */
+  function reveal(rootEl) {
+    rootEl = rootEl || document;
+    var els = [].slice.call(rootEl.querySelectorAll('[data-reveal]')), e = env();
+    document.documentElement.classList.add('js');
+    var seen = new Map();
+    els.forEach(function (el) { var k = seen.get(el.parentNode) || 0; seen.set(el.parentNode, k + 1); if (!el.style.getPropertyValue('--i')) el.style.setProperty('--i', el.getAttribute('data-i') != null ? el.getAttribute('data-i') : k % 8); });
+    function show(el) { el.classList.add('is-in'); }
+    if (e.t != null || e.freeze || e.reduce || typeof IntersectionObserver !== 'function') { els.forEach(show); return els.length; }
+    var io = new IntersectionObserver(function (es) { es.forEach(function (x) { if (x.isIntersecting) { show(x.target); io.unobserve(x.target); } }); }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    els.forEach(function (el) { io.observe(el); });
+    return els.length;
+  }
+
+  function init(rootEl) {
+    rootEl = rootEl || document;
+    chart.mount(rootEl); chart.animate(rootEl);
+    [].slice.call(rootEl.querySelectorAll('[data-count]')).forEach(function (el) { if (!el.__kit) el.__kit = count(el); });
+    reveal(rootEl); fpsInit();
+  }
+  if (typeof addEventListener === 'function') addEventListener('beforeprint', function () { live.forEach(function (p) { p.drawAt(1); }); });
+
+  return { chart: chart, reveal: reveal, draw: draw, grow: grow, count: count, flow: flow, scrub: scrub, init: init, env: env };
+});
+/* qsdlc-present: diagram.js */
+/* diagram.js — layered DAG -> inline SVG. Replaces external Mermaid. Zero dependencies; UMD (browser global `Diagram`, or require() in Node, no DOM needed).
+ * Colours are ONLY var(--token) (--bg --surface --panel --line --ink --muted --hi --ok --alt --risk).
+ *
+ *   Diagram.svg(json, opts?)     -> '<figure class="kit-diagram" data-diagram …>' string
+ *   Diagram.layout(json, el?, opts?) -> same string; also sets el.innerHTML when el is given
+ *   Diagram.mount(root?)         renders every <script type="application/json" data-diagram> (inserted after it, or into data-target)
+ *   Diagram.animate(root?)       draws edges in once visible (final frame under reduced motion, ?freeze=1, or ?t=0..1)
+ *
+ * opts: { edges:'curved' } (or json.routing:'curved') switches orthogonal edges to curves. json.edges is always the edge ARRAY.
+ * json: { title, desc, direction:'LR'|'TB', routing?:'orthogonal'|'curved', source?, illustrative?,
+ *         nodes:[{id,label,sub?,shape:'rect'|'round'|'pill'|'diamond'|'hex', status:'done'|'running'|'blocked'|'todo'|'risk', group?, tag?}],
+ *         edges:[{from,to,label?,kind?:'dep'|'handoff'|'optional'}], groups:[{id,label}] }
+ * Status is shown by glyph + status word in the node (and stroke weight/dash), colour is secondary. Cycles: back-edges are reversed for
+ * layout, drawn dashed (class dg-back). Long edges are routed through dummy nodes so they never cross unrelated nodes' ranks.
+ * Markup hooks: figure.kit-diagram[data-diagram], svg role=img (+title/desc), g.dg-group, path.dg-edge[data-from][data-to], g.dg-node[data-id][data-status],
+ * g.dg-label, details.kit-details (adjacency list fallback).
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Diagram = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  function hid(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); }
+  var STAT = { done: { tone: 'ok', word: 'done' }, running: { tone: 'hi', word: 'running' }, blocked: { tone: 'risk', word: 'blocked' }, todo: { tone: 'muted', word: 'to do' }, risk: { tone: 'alt', word: 'at risk' } };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function r1(n) { return Math.round(n * 10) / 10; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function wrap(s, max) { // up to 2 lines on word boundaries
+    s = String(s == null ? '' : s); if (s.length <= max) return [s];
+    var words = s.split(/\s+/), a = '', i = 0;
+    while (i < words.length && (a + ' ' + words[i]).trim().length <= max) a = (a + ' ' + words[i++]).trim();
+    if (!a) { a = s.slice(0, max); i = 0; words = [s.slice(max)]; }
+    var b = words.slice(i).join(' '); if (b.length > max) b = b.slice(0, max - 1) + '…';
+    return b ? [a, b] : [a];
+  }
+  function font(sz, w, mono) { return 'font:' + (w || 400) + ' ' + sz + 'px ' + (mono ? 'var(--font-mono,ui-monospace,monospace)' : 'var(--font-sans,ui-sans-serif,system-ui,sans-serif)'); }
+
+  /* ------------------------------------------------------------------ layout */
+  function layout(spec, opts) {
+    opts = opts || {};
+    var dir = spec.direction === 'TB' ? 'TB' : 'LR', curved = opts.edges === 'curved' || spec.routing === 'curved' || spec.curved === true;
+    var nodes = [], byId = {}, parts = [], partIdx = {};
+    (spec.groups || []).forEach(function (g) { if (partIdx[g.id] == null) { partIdx[g.id] = parts.length; parts.push({ id: g.id, label: g.label || g.id }); } });
+    (spec.nodes || []).forEach(function (n, i) {
+      var st = STAT[n.status] ? n.status : null, lines = wrap(n.label, 24);
+      var meta = [st ? STAT[st].word : '', n.tag || '', n.sub || ''].filter(Boolean).join(' · ');
+      var w = clamp(Math.max.apply(null, lines.map(function (l) { return l.length * 7.4; }).concat(meta.length * 6.3)) + 30 + (st ? 22 : 0), 96, 280), h = 16 + lines.length * 16 + (meta ? 15 : 0);
+      var shape = ['rect', 'round', 'pill', 'diamond', 'hex'].indexOf(n.shape) >= 0 ? n.shape : 'rect';
+      if (shape === 'diamond') { w *= 1.3; h = h * 1.5 + 6; } else if (shape === 'hex') w += 22; else if (shape === 'pill') w += 14;
+      var o = { id: String(n.id), label: n.label == null ? n.id : n.label, lines: lines, meta: meta, status: st, shape: shape, group: n.group, w: w, h: h, ord: i, tag: n.tag, sub: n.sub };
+      if (o.group != null && partIdx[o.group] == null) { partIdx[o.group] = parts.length; parts.push({ id: o.group, label: o.group }); }
+      byId[o.id] = o; nodes.push(o);
+    });
+    var hasGroups = parts.length > 0; parts.push({ id: '', label: '' }); partIdx[''] = parts.length - 1;
+    nodes.forEach(function (n) { n.pi = partIdx[n.group != null ? n.group : '']; n.ms = dir === 'LR' ? n.w : n.h; n.cs = dir === 'LR' ? n.h : n.w; });
+
+    var edges = [];
+    (spec.edges || []).forEach(function (e, i) { var a = byId[e.from], b = byId[e.to]; if (a && b && a !== b) edges.push({ a: a, b: b, label: e.label, kind: e.kind || 'dep', ord: i }); });
+
+    /* cycle breaking: DFS from roots, mark back-edges */
+    var out = {}, hasIn = {}; nodes.forEach(function (n) { out[n.id] = []; });
+    edges.forEach(function (e) { out[e.a.id].push(e); hasIn[e.b.id] = 1; });
+    var state = {};
+    function dfs(u) { state[u.id] = 1; out[u.id].forEach(function (e) { var s = state[e.b.id]; if (s === 1) e.back = true; else if (!s) dfs(e.b); }); state[u.id] = 2; }
+    nodes.filter(function (n) { return !hasIn[n.id]; }).concat(nodes).forEach(function (n) { if (!state[n.id]) dfs(n); });
+    edges.forEach(function (e) { e.s = e.back ? e.b : e.a; e.t = e.back ? e.a : e.b; });
+
+    /* longest-path ranking on the layout DAG */
+    var preds = {}; nodes.forEach(function (n) { preds[n.id] = []; });
+    edges.forEach(function (e) { preds[e.t.id].push(e.s); });
+    var memo = {};
+    function rank(n) { if (memo[n.id] != null) return memo[n.id]; memo[n.id] = 0; var r = 0; preds[n.id].forEach(function (p) { r = Math.max(r, rank(p) + 1); }); return (memo[n.id] = r); }
+    nodes.forEach(function (n) { n.r = rank(n); });
+    var R = nodes.reduce(function (m, n) { return Math.max(m, n.r); }, 0), layers = []; for (var i = 0; i <= R; i++) layers.push([]);
+    nodes.forEach(function (n) { layers[n.r].push(n); });
+
+    /* dummy chains for edges spanning >1 rank */
+    var dn = 0;
+    edges.forEach(function (e) {
+      e.chain = [e.s];
+      for (var r = e.s.r + 1; r < e.t.r; r++) { var d = { id: '~' + (dn++), dummy: true, r: r, pi: partIdx[''], ms: 0, cs: 0, ord: 1e6 + dn }; layers[r].push(d); e.chain.push(d); }
+      e.chain.push(e.t);
+      for (var k = 0; k < e.chain.length - 1; k++) { var p = e.chain[k], q = e.chain[k + 1]; (p.downs = p.downs || []).push(q); (q.ups = q.ups || []).push(p); }
+    });
+
+    /* lanes (stable, non-overlapping group boxes) + barycentre sweeps */
+    var lanes = parts.map(function (p, pi) { return layers.reduce(function (m, L) { return Math.max(m, L.filter(function (n) { return n.pi === pi; }).length); }, 0); });
+    var start = [], acc = 0; parts.forEach(function (p, pi) { start[pi] = acc; if (lanes[pi]) acc += lanes[pi] + (hasGroups ? 0.6 : 0); });
+    var totalSlots = Math.max(1, acc - (hasGroups ? 0.6 : 0));
+    function assign() {
+      layers.forEach(function (L) {
+        var cnt = {}; L.forEach(function (n) { cnt[n.pi] = (cnt[n.pi] || 0) + 1; });
+        var seen = {}; L.forEach(function (n) { var k = seen[n.pi] = (seen[n.pi] || 0) + 1; n.slot = start[n.pi] + (lanes[n.pi] - cnt[n.pi]) / 2 + (k - 1); });
+      });
+    }
+    function sortLayer(L, key) {
+      L.forEach(function (n) { var ns = n[key]; n.bc = ns && ns.length ? ns.reduce(function (a, x) { return a + x.slot; }, 0) / ns.length : n.slot; });
+      L.sort(function (a, b) { return a.pi - b.pi || a.bc - b.bc || a.ord - b.ord; });
+    }
+    layers.forEach(function (L) { L.sort(function (a, b) { return a.pi - b.pi || a.ord - b.ord; }); });
+    assign();
+    for (var it = 0; it < 8; it++) {
+      for (var r = 1; r <= R; r++) { sortLayer(layers[r], 'ups'); assign(); }
+      for (r = R - 1; r >= 0; r--) { sortLayer(layers[r], 'downs'); assign(); }
+    }
+
+    /* straighten: pull each node toward the mean slot of its neighbours, keeping order and a 1-slot gap inside its lane band */
+    function refine(L, key) {
+      parts.forEach(function (p, pi) {
+        var ns = L.filter(function (n) { return n.pi === pi; }); if (!ns.length) return;
+        var lo = start[pi], hi = start[pi] + lanes[pi] - 1, d = ns.map(function (n) { var q = n[key]; return q && q.length ? q.reduce(function (a, x) { return a + x.slot; }, 0) / q.length : n.slot; }), k;
+        for (k = 0; k < ns.length; k++) d[k] = clamp(d[k], lo + k, hi - (ns.length - 1 - k));
+        for (k = 1; k < ns.length; k++) d[k] = Math.max(d[k], d[k - 1] + 1);
+        for (k = ns.length - 2; k >= 0; k--) d[k] = Math.min(d[k], d[k + 1] - 1);
+        ns.forEach(function (n, i) { n.slot = d[i]; });
+      });
+    }
+    for (it = 0; it < 4; it++) {
+      for (r = 1; r <= R; r++) refine(layers[r], 'ups');
+      for (r = R - 1; r >= 0; r--) refine(layers[r], 'downs');
+    }
+
+    /* coordinates (abstract: m = along rank axis, c = across) */
+    var hasLabels = edges.some(function (e) { return e.label; });
+    var gapM = (dir === 'LR' ? (hasLabels ? 118 : 84) : (hasLabels ? 74 : 56)) + (hasGroups ? 18 : 0);
+    var maxCs = nodes.reduce(function (m, n) { return Math.max(m, n.cs); }, 40), pitch = maxCs + (hasGroups ? 42 : (dir === 'TB' ? 34 : 26)), cur = 0;
+    layers.forEach(function (L) {
+      var ml = L.reduce(function (m, n) { return Math.max(m, n.ms); }, 0) || 8;
+      L.forEach(function (n) { n.m = cur + ml / 2; n.c = (n.slot + 0.5) * pitch; });
+      cur += ml + gapM;
+    });
+    function P(m, c) { return dir === 'LR' ? { x: m, y: c } : { x: c, y: m }; }
+    nodes.forEach(function (n) { var p = P(n.m, n.c); n.x = p.x; n.y = p.y; });
+
+    /* edge polylines */
+    /* edges between the same two nodes (a→b with b→a, or duplicates) get parallel lanes instead of drawing on top of each other */
+    var lanes = {};
+    edges.forEach(function (e) { var key = e.a.id < e.b.id ? e.a.id + '\u0001' + e.b.id : e.b.id + '\u0001' + e.a.id; (lanes[key] = lanes[key] || []).push(e); e.laneKey = key; });
+    edges.forEach(function (e) {
+      var ch = e.chain, pts = [], k, grp = lanes[e.laneKey], off = grp.length > 1 ? (grp.indexOf(e) - (grp.length - 1) / 2) * 22 : 0;
+      var A = { m: ch[0].m + ch[0].ms / 2, c: ch[0].c + off }, B = { m: ch[ch.length - 1].m - ch[ch.length - 1].ms / 2, c: ch[ch.length - 1].c + off }, seq = [A];
+      for (k = 1; k < ch.length - 1; k++) seq.push({ m: ch[k].m, c: ch[k].c + off });
+      seq.push(B);
+      pts.push(seq[0]);
+      for (k = 1; k < seq.length; k++) {
+        var p = seq[k - 1], q = seq[k], mid = (p.m + q.m) / 2;
+        // a labelled edge bends early so its last segment (unique to this edge) is long enough to carry the label beside the arrowhead
+        if (e.label && !curved && k === seq.length - 1) { var need = String(e.label).length * 6.1 + 34; if (q.m - p.m > need + 14) mid = q.m - need; }
+        if (curved) pts.push({ m: mid, c: p.c, cp: 1 }, { m: mid, c: q.c, cp: 1 }, q);
+        else pts.push({ m: mid, c: p.c }, { m: mid, c: q.c }, q);
+      }
+      if (e.back) pts.reverse();
+      var sp = pts.map(function (q) { var s = P(q.m, q.c); s.cp = q.cp; return s; });
+      var clean = curved ? sp : sp.filter(function (q, i) { // drop zero-length and collinear points
+        var a = sp[i - 1], b = sp[i + 1];
+        if (a && a.x === q.x && a.y === q.y) return false;
+        return !(a && b && ((a.x === q.x && q.x === b.x) || (a.y === q.y && q.y === b.y)));
+      });
+      e.pts = clean;
+    });
+    return { dir: dir, curved: curved, nodes: nodes, edges: edges, parts: parts, hasGroups: hasGroups };
+  }
+
+  /* ------------------------------------------------------------------ drawing */
+  function edgePath(e, curved) {
+    var p = e.pts, d = 'M' + r1(p[0].x) + ' ' + r1(p[0].y), i;
+    if (curved) { for (i = 1; i + 2 < p.length; i += 3) d += 'C' + r1(p[i].x) + ' ' + r1(p[i].y) + ' ' + r1(p[i + 1].x) + ' ' + r1(p[i + 1].y) + ' ' + r1(p[i + 2].x) + ' ' + r1(p[i + 2].y); return d; }
+    for (i = 1; i < p.length - 1; i++) {
+      var a = p[i - 1], b = p[i], c = p[i + 1], l1 = Math.hypot(b.x - a.x, b.y - a.y), l2 = Math.hypot(c.x - b.x, c.y - b.y), rr = Math.min(7, l1 / 2, l2 / 2);
+      d += 'L' + r1(b.x - (b.x - a.x) / l1 * rr) + ' ' + r1(b.y - (b.y - a.y) / l1 * rr) + 'Q' + r1(b.x) + ' ' + r1(b.y) + ' ' + r1(b.x + (c.x - b.x) / l2 * rr) + ' ' + r1(b.y + (c.y - b.y) / l2 * rr);
+    }
+    return d + 'L' + r1(p[p.length - 1].x) + ' ' + r1(p[p.length - 1].y);
+  }
+  function glyph(st, x, y) {
+    var c = 'var(--' + STAT[st].tone + ')', s = 'fill:none;stroke:' + c + ';stroke-width:2;stroke-linecap:round;stroke-linejoin:round';
+    if (st === 'done') return '<path d="M' + (x - 5) + ' ' + y + 'l3.5 3.5 6.5-7" style="' + s + '"/>';
+    if (st === 'running') return '<path d="M' + (x - 4) + ' ' + (y - 6) + 'l10 6-10 6z" style="fill:' + c + ';stroke:none"/>';
+    if (st === 'blocked') return '<circle cx="' + x + '" cy="' + y + '" r="6" style="' + s + '"/><path d="M' + (x - 3.5) + ' ' + y + 'h7" style="' + s + '"/>';
+    if (st === 'risk') return '<path d="M' + x + ' ' + (y - 6.5) + 'l7 12.5h-14z" style="' + s + ';stroke-width:1.6"/><path d="M' + x + ' ' + (y - 2) + 'v4" style="' + s + ';stroke-width:1.6"/>';
+    return '<circle cx="' + x + '" cy="' + y + '" r="5" style="' + s + ';stroke-width:1.5"/>';
+  }
+  function render(spec, opts) {
+    var m = layout(spec, opts), id = 'dg' + (spec.id ? String(spec.id).replace(/[^\w-]/g, '') : hid(JSON.stringify(spec) + JSON.stringify(opts || {}))), parts = [], bx0 = 1e9, by0 = 1e9, bx1 = -1e9, by1 = -1e9;
+    function grow(x0, y0, x1, y1) { bx0 = Math.min(bx0, x0); by0 = Math.min(by0, y0); bx1 = Math.max(bx1, x1); by1 = Math.max(by1, y1); }
+    var body = '';
+    /* groups */
+    m.parts.forEach(function (g) {
+      if (!g.id) return;
+      var ns = m.nodes.filter(function (n) { return String(n.group) === String(g.id); });
+      if (!ns.length) return;
+      var x0 = Math.min.apply(null, ns.map(function (n) { return n.x - n.w / 2; })) - 16, x1 = Math.max.apply(null, ns.map(function (n) { return n.x + n.w / 2; })) + 16,
+        y0 = Math.min.apply(null, ns.map(function (n) { return n.y - n.h / 2; })) - 30, y1 = Math.max.apply(null, ns.map(function (n) { return n.y + n.h / 2; })) + 16;
+      grow(x0, y0, x1, y1);
+      body += '<g class="dg-group" data-group="' + esc(g.id) + '"><rect x="' + r1(x0) + '" y="' + r1(y0) + '" width="' + r1(x1 - x0) + '" height="' + r1(y1 - y0) + '" style="fill:color-mix(in srgb,var(--ink) 4%,transparent);stroke:var(--line);stroke-width:1;stroke-dasharray:5 4"/>' +
+        '<text x="' + r1(x0 + 10) + '" y="' + r1(y0 + 17) + '" style="fill:var(--muted);' + font(11, 600, 1) + ';letter-spacing:.1em;text-transform:uppercase">' + esc(g.label) + '</text></g>';
+    });
+    /* edges */
+    var labels = '', placed = [];
+    function segLen(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+    // two segments run along the same line and overlap: they are a shared trunk
+    function sharesTrunk(a0, a1, b0, b1) {
+      if (Math.abs(a0.y - a1.y) < 1 && Math.abs(b0.y - b1.y) < 1 && Math.abs(a0.y - b0.y) < 2) return Math.min(Math.max(a0.x, a1.x), Math.max(b0.x, b1.x)) - Math.max(Math.min(a0.x, a1.x), Math.min(b0.x, b1.x)) > 4;
+      if (Math.abs(a0.x - a1.x) < 1 && Math.abs(b0.x - b1.x) < 1 && Math.abs(a0.x - b0.x) < 2) return Math.min(Math.max(a0.y, a1.y), Math.max(b0.y, b1.y)) - Math.max(Math.min(a0.y, a1.y), Math.min(b0.y, b1.y)) > 4;
+      return false;
+    }
+    /* Choose the segment that carries an edge's label: prefer one no other edge runs along (so the label belongs to exactly one edge),
+       then one long enough for the label, then the last segment (beside the arrowhead), and never on top of a label already placed. */
+    function pickLabelSegment(e, lw) {
+      var p = e.pts, cands = [], i;
+      for (i = 0; i + 1 < p.length; i++) {
+        var len = segLen(p[i], p[i + 1]);
+        if (!m.curved && len < Math.min(lw + 10, 36)) continue;
+        var share = 0;
+        if (!m.curved) m.edges.forEach(function (f) { if (f === e) return; for (var j = 0; j + 1 < f.pts.length; j++) if (sharesTrunk(p[i], p[i + 1], f.pts[j], f.pts[j + 1])) { share++; break; } });
+        cands.push({ i: i, len: len, share: share, fits: len >= lw + 16 ? 0 : 1, last: i === p.length - 2 ? 0 : 1 });
+      }
+      if (!cands.length) { var b = 0, bi = 0; for (i = 0; i + 1 < p.length; i++) { var l = segLen(p[i], p[i + 1]); if (l > b) { b = l; bi = i; } } return bi; }
+      cands.sort(function (a, b) { return a.share - b.share || a.fits - b.fits || a.last - b.last || b.len - a.len; });
+      for (var c = 0; c < cands.length; c++) {
+        var s = cands[c], lx = (p[s.i].x + p[s.i + 1].x) / 2, ly = (p[s.i].y + p[s.i + 1].y) / 2, hit = false;
+        for (var k = 0; k < placed.length; k++) { var r = placed[k]; if (lx - lw / 2 < r.x1 + 3 && lx + lw / 2 > r.x0 - 3 && ly - 9 < r.y1 + 3 && ly + 9 > r.y0 - 3) { hit = true; break; } }
+        if (!hit) return s.i;
+      }
+      return cands[0].i;
+    }
+    m.edges.forEach(function (e) {
+      var dash = e.back || e.kind === 'optional' ? '6 4' : '', w = e.kind === 'handoff' ? 2.25 : 1.5, d = edgePath(e, m.curved);
+      body += '<path class="dg-edge' + (e.back ? ' dg-back' : '') + '" data-from="' + esc(e.a.id) + '" data-to="' + esc(e.b.id) + '" data-dash="' + dash + '" d="' + d + '" marker-end="url(#' + id + '-a)" style="fill:none;stroke:var(--' + (e.kind === 'handoff' ? 'ink' : 'muted') + ');stroke-width:' + w + (dash ? ';stroke-dasharray:' + dash : '') + ';stroke-linejoin:round"/>';
+      e.pts.forEach(function (p) { grow(p.x, p.y, p.x, p.y); });
+      if (e.label) {
+        var p = e.pts, lw = String(e.label).length * 6.1 + 12, bi = pickLabelSegment(e, lw);
+        var lx = (p[bi].x + p[bi + 1].x) / 2, ly = (p[bi].y + p[bi + 1].y) / 2;
+        placed.push({ x0: lx - lw / 2, x1: lx + lw / 2, y0: ly - 9, y1: ly + 9 });
+        labels += '<g class="dg-label"><rect x="' + r1(lx - lw / 2) + '" y="' + r1(ly - 9) + '" width="' + r1(lw) + '" height="18" style="fill:var(--bg);opacity:.92"/><text x="' + r1(lx) + '" y="' + r1(ly + 4) + '" text-anchor="middle" style="fill:var(--muted);' + font(11, 400, 1) + '">' + esc(e.label) + '</text></g>';
+        grow(lx - lw / 2, ly - 9, lx + lw / 2, ly + 9);
+      }
+    });
+    /* nodes */
+    m.nodes.forEach(function (n) {
+      var tone = n.status ? STAT[n.status].tone : 'muted', sw = n.status === 'running' || n.status === 'blocked' ? 2.25 : 1.25, dash = n.status === 'todo' ? '4 3' : '';
+      grow(n.x - n.w / 2, n.y - n.h / 2, n.x + n.w / 2, n.y + n.h / 2);
+      var gl = n.status && n.shape !== 'diamond', tx = n.x + (gl ? 11 : 0), ty = n.y - (n.lines.length * 16 + (n.meta ? 15 : 0)) / 2, g = '';
+      var xx = n.x - n.w / 2, yy = n.y - n.h / 2, st = 'fill:var(--surface);stroke:var(--' + tone + ');stroke-width:' + sw + (dash ? ';stroke-dasharray:' + dash : '');
+      if (n.shape === 'diamond') g += '<polygon points="' + [[n.x, yy], [xx + n.w, n.y], [n.x, yy + n.h], [xx, n.y]].map(function (p) { return r1(p[0]) + ',' + r1(p[1]); }).join(' ') + '" style="' + st + '"/>';
+      else if (n.shape === 'hex') g += '<polygon points="' + [[xx + 14, yy], [xx + n.w - 14, yy], [xx + n.w, n.y], [xx + n.w - 14, yy + n.h], [xx + 14, yy + n.h], [xx, n.y]].map(function (p) { return r1(p[0]) + ',' + r1(p[1]); }).join(' ') + '" style="' + st + '"/>';
+      else g += '<rect x="' + r1(xx) + '" y="' + r1(yy) + '" width="' + r1(n.w) + '" height="' + r1(n.h) + '" ' + (n.shape === 'pill' ? 'rx="' + r1(n.h / 2) + '" ' : n.shape === 'round' ? 'rx="10" ' : '') + 'style="' + st + (n.shape === 'rect' ? ';rx:var(--radius,2px)' : '') + '"/>';
+      if (n.status) g += glyph(n.status, n.shape === 'diamond' ? n.x : xx + 20, n.shape === 'diamond' ? yy + 15 : n.y);
+      n.lines.forEach(function (l, i) { g += '<text x="' + r1(tx) + '" y="' + r1(ty + 13 + i * 16) + '" text-anchor="middle" style="fill:var(--ink);' + font(13, 600) + '">' + esc(l) + '</text>'; });
+      if (n.meta) g += '<text x="' + r1(tx) + '" y="' + r1(ty + n.lines.length * 16 + 11) + '" text-anchor="middle" style="fill:var(--muted);' + font(10.5, 500, 1) + '">' + esc(n.meta) + '</text>';
+      body += '<g class="dg-node" data-id="' + esc(n.id) + '"' + (n.status ? ' data-status="' + n.status + '"' : '') + '><title>' + esc(n.label + (n.status ? ' (' + STAT[n.status].word + ')' : '')) + '</title>' + g + '</g>';
+    });
+    body += labels;
+    var pad = 14, vx = bx0 - pad, vy = by0 - pad, W = bx1 - bx0 + pad * 2, H = by1 - by0 + pad * 2, title = spec.title || 'Diagram';
+    var auto = 'Directed graph with ' + m.nodes.length + ' nodes and ' + m.edges.length + ' edges, flowing ' + (m.dir === 'LR' ? 'left to right' : 'top to bottom') + '.';
+    var adj = m.nodes.map(function (n) {
+      var outs = m.edges.filter(function (e) { return e.a === n; }).map(function (e) { return esc(e.b.label) + (e.label ? ' (' + esc(e.label) + ')' : ''); });
+      return '<li><strong>' + esc(n.label) + '</strong>' + (n.status ? ' — ' + STAT[n.status].word : '') + (n.tag ? ' [' + esc(n.tag) + ']' : '') + (n.sub ? ', ' + esc(n.sub) : '') + (outs.length ? ' → ' + outs.join(', ') : ' (end)') + '</li>';
+    }).join('');
+    return '<figure class="kit-diagram" data-diagram data-source="' + esc(spec.source || (spec.illustrative ? 'illustrative' : 'unspecified')) + '"' + (spec.illustrative ? ' data-illustrative="true"' : '') + '>' +
+      (spec.illustrative ? '<figcaption class="kit-cap"><span class="kit-illustrative">Illustrative data</span></figcaption>' : '') + '<div class="kit-plot" tabindex="0">' +
+      '<svg viewBox="' + r1(vx) + ' ' + r1(vy) + ' ' + r1(W) + ' ' + r1(H) + '" role="img" aria-labelledby="' + id + '-t ' + id + '-d" style="max-width:' + Math.round(W * 1.3) + 'px;min-width:' + Math.min(Math.round(W), 760) + 'px">' +
+      '<title id="' + id + '-t">' + esc(title) + '</title><desc id="' + id + '-d">' + esc(spec.desc || auto) + '</desc>' +
+      '<defs><marker id="' + id + '-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--muted)"/></marker></defs>' +
+      body + '</svg></div><details class="kit-details"><summary>Node and edge list</summary><ul>' + adj + '</ul></details></figure>';
+  }
+
+  /* ------------------------------------------------------------------ DOM helpers */
+  function layoutFn(spec, el, opts) { var s = render(spec || {}, opts); if (el) el.innerHTML = s; return s; }
+  function mount(rootEl) {
+    rootEl = rootEl || document;
+    [].slice.call(rootEl.querySelectorAll('script[type="application/json"][data-diagram]')).forEach(function (sc) {
+      if (sc.getAttribute('data-mounted')) return;
+      var html; try { html = render(JSON.parse(sc.textContent)); } catch (e) { if (typeof console !== 'undefined') console.error('Diagram.mount:', e.message); return; }
+      var tg = sc.getAttribute('data-target'), el = tg && document.querySelector(tg);
+      if (el) el.innerHTML = html; else sc.insertAdjacentHTML('afterend', html);
+      sc.setAttribute('data-mounted', '1');
+    });
+  }
+  function animate(rootEl) {
+    rootEl = rootEl || document;
+    var q = null, reduce = false; try { q = new URLSearchParams(location.search); reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* no DOM */ }
+    var tq = q && q.get('t'), fixed = tq != null && tq !== '' && isFinite(+tq) ? clamp(+tq, 0, 1) : null;
+    if (reduce || (q && q.get('freeze') === '1' && fixed == null)) return;
+    [].slice.call(rootEl.querySelectorAll('figure.kit-diagram')).forEach(function (fig) {
+      var ps = [].slice.call(fig.querySelectorAll('path.dg-edge')); if (!ps.length || fig.__dgAnim) return; fig.__dgAnim = 1;
+      function set(t) {
+        ps.forEach(function (p, i) {
+          var len = p.__len || (p.__len = p.getTotalLength()), n = ps.length, lt = clamp((t - i / n * 0.6) / 0.4, 0, 1);
+          if (lt >= 1) { p.style.strokeDasharray = p.getAttribute('data-dash') || ''; p.style.strokeDashoffset = ''; p.style.markerEnd = ''; }
+          else { p.style.strokeDasharray = len; p.style.strokeDashoffset = len * (1 - lt); p.style.markerEnd = 'none'; }
+        });
+      }
+      if (fixed != null) return set(fixed);
+      set(0);
+      function run() { var t0 = 0; requestAnimationFrame(function tick(now) { if (!t0) t0 = now; var t = Math.min(1, (now - t0) / 1400); set(t); if (t < 1) requestAnimationFrame(tick); }); }
+      if (typeof IntersectionObserver !== 'function') return run();
+      var io = new IntersectionObserver(function (es) { if (es.some(function (x) { return x.isIntersecting; })) { io.disconnect(); run(); } }, { threshold: 0.15 }); io.observe(fig);
+    });
+  }
+  return { svg: render, layout: layoutFn, mount: mount, animate: animate, model: layout };
+});
+/* html-motion: _core.js */
+/* html-motion core: shared runtime for every engine. Zero dependencies. Always inlined first.
+ *
+ * Contract (every engine):  const e = Engines.name(canvas, { W, H, ...options })
+ *                           -> { start, stop, redraw, drawAt, set, resize, destroy }
+ *   W, H     drawing space in CSS pixels (default: the canvas's client size). The backing store is W*res x H*res,
+ *            res = min(devicePixelRatio, 2) (governor may lower it). Inline size is set to W x H px unless css:false.
+ *   start()  runs the loop. Under prefers-reduced-motion it paints one COMPLETE final frame and does not loop.
+ *   stop()   cancels the loop (the last frame stays on the canvas).
+ *   redraw() repaints the current frame; call after a theme or token change.
+ *   drawAt(t) paints the frame for t seconds. Exact for "pure" engines; stateful engines replay a seeded
+ *            simulation from 0 in 1/30 s steps, so the same t gives the same frame.
+ *   set(obj) changes options live (engines read options every frame where noted in their header).
+ *   A draw function may return 'freeze' to end its own loop; the last frame stays.
+ *
+ * Common options: loop (pure engines restart after dur+hold), dur, hold (s, default .6), bg (true or token: paint
+ *   a background), dpr (cap, <= 2), quality (GPU resolution multiplier), css (false: page sizes the canvas), seed.
+ *
+ * Tokens. Engines read colours BY NAME from :root on every draw, so a CSS transition on a registered @property
+ * glides through the canvas with no restart. A page MUST define all ten (below). If one is missing the engine
+ * falls back to the neutral defaults in Engines.core.defaults so it still renders, but the colours will not be yours.
+ *   --bg --surface --panel --line --ink --muted --hi --ok --alt --risk
+ * <html data-deck="dark|light"> selects the theme engines blend for (glow add vs. normal). Absent: system theme.
+ *
+ * Globals:  Engines.maxFps (default 60)  cap for pages that run for hours, e.g. 30.
+ *           Engines.noGovernor (false)   set true if the page paces a GPU engine itself with drawAt(t).
+ * URL:      ?fps=1 frame-rate readout   ?gov=off disable the governor (for testing).
+ * Governor (GPU engines only): if ~45 consecutive frames average slower than 20 fps, halve resolution; if still
+ *   slow, freeze on the last frame. Without WebGL (or on compile/context loss) the canvas gets a still gradient
+ *   built from the tokens (data-fallback="still").
+ */
+(function () {
+  'use strict';
+  var G = window, E = G.Engines = G.Engines || {};
+  var Q = new URLSearchParams(location.search);
+  if (E.maxFps == null) E.maxFps = 60;
+  if (E.noGovernor == null) E.noGovernor = false;
+
+  var TOKENS = ['--bg', '--surface', '--panel', '--line', '--ink', '--muted', '--hi', '--ok', '--alt', '--risk'];
+  // Neutral, unbranded fallbacks only. Real pages define their own tokens (see qsdlc-present brand binding).
+  var DEFAULTS = {
+    dark:  { '--bg': '#101214', '--surface': '#171a1d', '--panel': '#1f2327', '--line': '#2c3238', '--ink': '#e8eaec',
+             '--muted': '#9aa3ab', '--hi': '#3fb8af', '--ok': '#5bbf7a', '--alt': '#e0a458', '--risk': '#e5645a' },
+    light: { '--bg': '#f6f5f2', '--surface': '#ffffff', '--panel': '#ecebe7', '--line': '#d5d3cd', '--ink': '#1c1f22',
+             '--muted': '#5c646b', '--hi': '#0f7d76', '--ok': '#2b7a47', '--alt': '#9a6a12', '--risk': '#b3372e' }
+  };
+  var core = E.core = { tokens: TOKENS, defaults: DEFAULTS, frames: 0 };
+
+  // ---- small math helpers -------------------------------------------------------------------------------
+  core.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+  core.lerp = function (a, b, k) { return a + (b - a) * k; };
+  core.smooth = function (a, b, x) { var k = core.clamp((x - a) / (b - a || 1), 0, 1); return k * k * (3 - 2 * k); };
+  core.ease = function (k) { k = core.clamp(k, 0, 1); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+  core.rng = function (s) { // mulberry32: deterministic, so drawAt(t) is repeatable
+    s = (s >>> 0) || 1;
+    return function () {
+      s = (s + 0x6D2B79F5) >>> 0; var t = s;
+      t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  };
+  core.theme = function () {
+    var d = document.documentElement.getAttribute('data-deck');
+    if (d === 'light' || d === 'dark') return d;
+    return G.matchMedia && G.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  };
+  core.reduced = function () { return !!(G.matchMedia && G.matchMedia('(prefers-reduced-motion: reduce)').matches); };
+
+  // ---- colour parsing (any CSS colour the canvas understands -> [r,g,b]) --------------------------------
+  var cc = document.createElement('canvas').getContext('2d'), memo = {};
+  function parse(v, fb) {
+    v = (v || '').trim();
+    if (!v) return fb;
+    if (memo[v]) return memo[v];
+    cc.fillStyle = '#010203'; cc.fillStyle = v;
+    var s = cc.fillStyle, out;
+    if (s === '#010203' && v.replace(/\s/g, '').toLowerCase() !== '#010203') return fb; // not a colour
+    if (s.charAt(0) === '#') out = [parseInt(s.substr(1, 2), 16), parseInt(s.substr(3, 2), 16), parseInt(s.substr(5, 2), 16)];
+    else { var m = s.match(/[\d.]+/g); out = [+m[0], +m[1], +m[2]]; }
+    return (memo[v] = out);
+  }
+  function Env(W, H) {
+    var cs = getComputedStyle(document.documentElement), th = core.theme(), d = DEFAULTS[th];
+    this.W = W; this.H = H; this.dark = th === 'dark'; this.c = {};
+    for (var i = 0; i < TOKENS.length; i++) this.c[TOKENS[i]] = parse(cs.getPropertyValue(TOKENS[i]), parse(d[TOKENS[i]]));
+  }
+  var P = Env.prototype;
+  P.arr = function (t) { // token name ('--hi' or 'hi') or any CSS colour -> [r,g,b] 0..255
+    if (this.c[t]) return this.c[t];
+    var n = t.charAt(0) === '-' ? t : '--' + t;
+    return this.c[n] || parse(t, this.c['--ink']);
+  };
+  P.f = function (t) { var c = this.arr(t); return [c[0] / 255, c[1] / 255, c[2] / 255]; }; // 0..1 for GL uniforms
+  P.rgb = function (t) { var c = this.arr(t); return 'rgb(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ')'; };
+  P.a = function (t, al) { var c = this.arr(t); return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + core.clamp(al, 0, 1) + ')'; };
+  P.mix = function (t1, t2, k, al) {
+    var a = this.arr(t1), b = this.arr(t2);
+    return 'rgba(' + Math.round(a[0] + (b[0] - a[0]) * k) + ',' + Math.round(a[1] + (b[1] - a[1]) * k) + ',' +
+      Math.round(a[2] + (b[2] - a[2]) * k) + ',' + (al == null ? 1 : core.clamp(al, 0, 1)) + ')';
+  };
+  P.glow = function () { return this.dark ? 'lighter' : 'source-over'; }; // additive glow on dark, plain on light
+  core.env = function (W, H) { return new Env(W, H); };
+
+  // ---- still fallback (no WebGL, shader compile error, lost context) -------------------------------------
+  core.still = function (canvas, e) {
+    canvas.style.background = 'radial-gradient(120% 90% at 30% 20%,' + e.a('--hi', .35) + ',transparent 60%),' +
+      'linear-gradient(' + e.rgb('--surface') + ',' + e.rgb('--bg') + ')';
+    canvas.setAttribute('data-fallback', 'still');
+  };
+
+  // ---- WebGL helpers --------------------------------------------------------------------------------------
+  core.gl = {
+    program: function (gl, vs, fs, attrs) { // attrs: attribute names, bound to locations 0,1,2...
+      function sh(type, src) {
+        var h = gl.createShader(type); gl.shaderSource(h, src); gl.compileShader(h);
+        if (!gl.getShaderParameter(h, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(h));
+        return h;
+      }
+      var p = gl.createProgram();
+      gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+      (attrs || []).forEach(function (n, i) { gl.bindAttribLocation(p, i, n); });
+      gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+      return p;
+    }
+  };
+
+  // ---- ?fps=1 readout (one shared element, counts paints across all engines) ------------------------------
+  var fpsEl = null;
+  function fpsInit() {
+    if (fpsEl || Q.get('fps') !== '1' || !document.body) return;
+    fpsEl = document.createElement('div'); fpsEl.setAttribute('data-hm-fps', '');
+    fpsEl.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99999;font:11px/1.2 ui-monospace,Consolas,monospace;' +
+      'padding:3px 6px;background:rgba(0,0,0,.7);color:#fff;pointer-events:none';
+    document.body.appendChild(fpsEl);
+    var n0 = 0, t0 = performance.now();
+    setInterval(function () {
+      var now = performance.now();
+      fpsEl.textContent = Math.round((core.frames - n0) * 1000 / (now - t0)) + ' fps';
+      n0 = core.frames; t0 = now;
+    }, 500);
+  }
+
+  // ---- the engine factory ----------------------------------------------------------------------------------
+  // spec: { pure, gpu, gl, dur, init(g,e,st), draw(g,e,st) -> 'freeze'|undefined, destroy() }
+  // `e` is the per-frame env: W H t dt p(progress, pure engines with dur) dark o(options) + colour helpers.
+  core.make = function (canvas, o, spec) {
+    o = o || {};
+    var self = { canvas: canvas, opts: o }, g = null, ok = false, inited = false, st = {};
+    var W = o.W || canvas.clientWidth || canvas.width || 300, H = o.H || canvas.clientHeight || canvas.height || 150;
+    var dprCap = Math.min(o.dpr || G.devicePixelRatio || 1, 2), scale = 1, res = 1, slow = 0, win = [];
+    var raf = 0, running = false, tNow = 0, lastTs = 0, lastPaint = 0, vis = true, io = null;
+
+    function dur() { return typeof spec.dur === 'function' ? spec.dur(o) : spec.dur; }
+    function hold() { return o.hold != null ? o.hold : .6; }
+    function size() {
+      res = core.clamp(dprCap * scale * (spec.gl ? (o.quality || 1) : 1), .25, 2);
+      canvas.width = Math.max(1, Math.round(W * res)); canvas.height = Math.max(1, Math.round(H * res));
+      if (o.css !== false) { canvas.style.width = W + 'px'; canvas.style.height = H + 'px'; }
+    }
+    function mk(t, dt) {
+      var e = new Env(W, H); e.t = t; e.dt = dt; e.res = res; e.o = o; e.canvas = canvas;
+      if (spec.dur) { var d = dur(); e.p = o.loop ? Math.min(1, (t % (d + hold())) / d) : Math.min(1, t / d); }
+      return e;
+    }
+    function ensure() {
+      if (inited) return; inited = true; fpsInit();
+      if (spec.gl) {
+        try { g = canvas.getContext('webgl', { antialias: false, alpha: true, premultipliedAlpha: true }) || canvas.getContext('experimental-webgl'); }
+        catch (x) { g = null; }
+        ok = !!g;
+        if (g) canvas.addEventListener('webglcontextlost', function (ev) { ev.preventDefault(); ok = false; stop(); core.still(canvas, mk(0, 0)); });
+      } else { g = canvas.getContext('2d'); ok = !!g; }
+      size();
+      if (ok) { try { if (spec.init) spec.init(g, mk(0, 0), st); } catch (x) { console.warn('html-motion: init failed, using still fallback.', x.message); ok = false; } }
+      if (!ok) core.still(canvas, mk(0, 0));
+    }
+    function paint(t, dt) {
+      ensure();
+      if (!ok) { core.still(canvas, mk(t, dt)); return 'still'; }
+      var e = mk(t, dt);
+      if (!spec.gl) {
+        g.setTransform(res, 0, 0, res, 0, 0); g.clearRect(0, 0, W, H);
+        if (o.bg) { g.fillStyle = e.rgb(o.bg === true ? '--bg' : o.bg); g.fillRect(0, 0, W, H); }
+      }
+      var r = spec.draw(g, e, st);
+      core.frames++;
+      if (spec.pure && spec.dur && !o.loop && t >= dur() + hold()) r = 'freeze';
+      return r;
+    }
+    function stop() { running = false; if (raf) cancelAnimationFrame(raf); raf = 0; }
+    function tick(ts) {
+      if (!running) return;
+      raf = requestAnimationFrame(tick);
+      if (document.hidden || !vis) { lastTs = 0; lastPaint = 0; return; }
+      var raw = lastTs ? ts - lastTs : 0; lastTs = ts;
+      if (spec.gpu && !E.noGovernor && Q.get('gov') !== 'off' && raw > 0 && raw < 250) {
+        win.push(raw);
+        if (win.length >= 45) {
+          var avg = win.reduce(function (a, b) { return a + b; }, 0) / win.length; win = [];
+          if (avg > 45) {
+            if (++slow === 1) { scale = .5; size(); console.info('html-motion governor: resolution halved'); }
+            else { console.info('html-motion governor: froze on last frame'); stop(); return; }
+          }
+        }
+      }
+      var min = 1000 / Math.max(1, E.maxFps);
+      if (lastPaint && ts - lastPaint < min - 1.5) return;
+      var dt = lastPaint ? Math.min((ts - lastPaint) / 1000, .1) : 0;
+      lastPaint = ts; tNow += dt;
+      if (paint(tNow, dt) === 'freeze') stop();
+    }
+    function settle() { // one complete final frame (reduced motion, or a still render)
+      if (spec.pure) self.drawAt(spec.dur ? dur() : (o.still != null ? o.still : 6));
+      else self.drawAt(o.warm != null ? o.warm : (spec.dur ? dur() + 2 : 4));
+    }
+
+    self.start = function () {
+      ensure();
+      if (running) return self;
+      if (core.reduced()) { settle(); return self; }
+      running = true; lastTs = 0; lastPaint = 0;
+      if (!io && 'IntersectionObserver' in G) { io = new IntersectionObserver(function (en) { vis = en[en.length - 1].isIntersecting; }); io.observe(canvas); }
+      raf = requestAnimationFrame(tick);
+      return self;
+    };
+    self.stop = function () { stop(); return self; };
+    self.redraw = function () { paint(tNow, 0); return self; };
+    self.drawAt = function (t) {
+      ensure(); tNow = t;
+      if (spec.pure || spec.gl || !ok) { paint(t, 0); return self; }
+      st = {}; if (spec.init) spec.init(g, mk(0, 0), st);
+      var n = Math.min(900, Math.ceil(t * 30));
+      if (n < 1) { paint(0, 0); return self; }
+      for (var i = 1; i <= n; i++) paint(i / 30, 1 / 30);
+      return self;
+    };
+    self.set = function (patch) { for (var k in patch) o[k] = patch[k]; return self; };
+    self.resize = function (w, h) { W = w; H = h; if (inited) { size(); self.redraw(); } return self; };
+    self.destroy = function () { stop(); if (io) io.disconnect(); if (spec.destroy) spec.destroy(st); };
+
+    var mq = G.matchMedia && G.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq && mq.addEventListener) mq.addEventListener('change', function () { if (mq.matches && running) { stop(); settle(); } });
+    return self;
+  };
+})();
+/* html-motion: streams.js */
+/* html-motion engine: streams. Things moving at different rates (speed = rate). 2D, stateful (seeded).
+ * Engines.streams(canvas, { W, H, ...options })
+ * Options:
+ *   lanes 6          number of parallel lanes; lane i runs at a rate between speed[0] and speed[1]
+ *   count 90         particles in total, spread across lanes
+ *   speed [40,220]   px per second, slowest to fastest lane (live: speedScale multiplies it, set({speedScale:.3}))
+ *   colors ['--hi','--alt','--ok']   token names, one per lane group
+ *   dir 'x'|'y'      flow direction
+ *   trail 14         trail length at 100 px/s, in px
+ *   size 1           particle size multiplier (use 1.8 or more for wall displays)
+ *   seed 7  bg false
+ */
+(function () {
+  var core = Engines.core;
+  Engines.streams = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: false,
+      init: function (g, e, s) {
+        var r = core.rng(o.seed || 7), n = o.count || 90, L = o.lanes || 6, sp = o.speed || [40, 220];
+        s.p = [];
+        for (var i = 0; i < n; i++) {
+          var lane = i % L;
+          s.p.push({ lane: lane, u: r(), v: core.lerp(sp[0], sp[1], L > 1 ? lane / (L - 1) : .5) * (.85 + r() * .3), z: 1 + r() * 1.6 });
+        }
+      },
+      draw: function (g, e, s) {
+        var L = o.lanes || 6, cols = o.colors || ['--hi', '--alt', '--ok'], y = o.dir === 'y', trail = o.trail || 14, sz = o.size || 1;
+        var len = y ? e.H : e.W, span = y ? e.W : e.H, k = o.speedScale == null ? 1 : o.speedScale;
+        var pos = function (lane) { return span * .12 + (span * .76) * (L > 1 ? lane / (L - 1) : .5); };
+        g.lineWidth = 1; g.strokeStyle = e.a('--line', .7);
+        for (var l = 0; l < L; l++) {
+          var q = pos(l); g.beginPath();
+          if (y) { g.moveTo(q, 0); g.lineTo(q, len); } else { g.moveTo(0, q); g.lineTo(len, q); }
+          g.stroke();
+        }
+        g.globalCompositeOperation = e.glow(); g.lineCap = 'round';
+        for (var i = 0; i < s.p.length; i++) {
+          var p = s.p[i]; p.u = (p.u + p.v * k * e.dt / len) % 1;
+          var a = p.u * len, b = pos(p.lane), tl = trail * (p.v * k / 100) + 2, col = cols[p.lane % cols.length];
+          g.strokeStyle = e.a(col, .55); g.lineWidth = p.z * sz;
+          g.beginPath();
+          if (y) { g.moveTo(b, a - tl); g.lineTo(b, a); } else { g.moveTo(a - tl, b); g.lineTo(a, b); }
+          g.stroke();
+          g.fillStyle = e.rgb(col); g.beginPath(); g.arc(y ? b : a, y ? a : b, p.z * .9 * sz, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+      }
+    });
+  };
+})();
+/* html-motion: graph.js */
+/* html-motion engine: graph. A network with travelers along its links (a traveler = one unit of work or data
+ * moving between nodes; a node pulses when one arrives). 2D, stateful (seeded).
+ * Engines.graph(canvas, { W, H, ...options })
+ * Options:
+ *   nodes 14 | [{x,y,r?,c?}]   count (auto-laid out, deterministic) or explicit nodes in drawing space (c = token)
+ *   links 1.5 | [[a,b],...]    average links per node, or explicit index pairs
+ *   travelers 18               travelers in flight (live)
+ *   speed 90                   px per second (live: speedScale)
+ *   hubs 2                     the first N auto nodes are drawn larger
+ *   colors ['--hi','--alt','--ok']   token names for travelers
+ *   seed 11  bg false
+ */
+(function () {
+  var core = Engines.core;
+  Engines.graph = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: false,
+      init: function (g, e, s) {
+        var r = core.rng(o.seed || 11), W = e.W, H = e.H, N, i, j;
+        if (Array.isArray(o.nodes)) {
+          s.n = o.nodes.map(function (n) { return { x: n.x, y: n.y, r: n.r || 5, c: n.c, pulse: 0 }; });
+        } else {
+          N = o.nodes || 14; s.n = [];
+          var hubs = o.hubs == null ? 2 : o.hubs;
+          for (i = 0; i < N; i++) s.n.push({ x: W * (.1 + .8 * r()), y: H * (.12 + .76 * r()), r: i < hubs ? 8 : 4.5, pulse: 0 });
+          for (var it = 0; it < 60; it++) // relax: push overlapping nodes apart
+            for (i = 0; i < N; i++) for (j = i + 1; j < N; j++) {
+              var dx = s.n[j].x - s.n[i].x, dy = s.n[j].y - s.n[i].y, d = Math.hypot(dx, dy) || 1, m = Math.min(W, H) * .2;
+              if (d < m) { var f = (m - d) / d * .25; s.n[i].x -= dx * f; s.n[i].y -= dy * f; s.n[j].x += dx * f; s.n[j].y += dy * f; }
+              s.n[i].x = core.clamp(s.n[i].x, W * .06, W * .94); s.n[i].y = core.clamp(s.n[i].y, H * .08, H * .92);
+            }
+        }
+        N = s.n.length; s.l = [];
+        if (Array.isArray(o.links)) {
+          s.l = o.links.map(function (p) { return [p[0], p[1]]; });
+        } else { // each node links to its nearest neighbours, up to the requested density
+          var want = Math.round(N * (o.links || 1.5)), seen = {};
+          for (var k = 0; k < 3 && s.l.length < want; k++) for (i = 0; i < N && s.l.length < want; i++) {
+            var ds = s.n.map(function (n, q) { return [q, Math.hypot(n.x - s.n[i].x, n.y - s.n[i].y)]; })
+              .filter(function (z) { return z[0] !== i; }).sort(function (a, b) { return a[1] - b[1]; });
+            if (!ds[k]) continue;
+            var q = ds[k][0], key = Math.min(i, q) + '-' + Math.max(i, q);
+            if (!seen[key]) { seen[key] = 1; s.l.push([i, q]); }
+          }
+        }
+        s.t = []; s.r = r;
+      },
+      draw: function (g, e, s) {
+        var cols = o.colors || ['--hi', '--alt', '--ok'], want = o.travelers == null ? 18 : o.travelers;
+        var sp = (o.speed || 90) * (o.speedScale == null ? 1 : o.speedScale);
+        g.lineWidth = 1; g.strokeStyle = e.a('--line', .9);
+        s.l.forEach(function (l) { var a = s.n[l[0]], b = s.n[l[1]]; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); });
+        while (s.t.length < want && s.l.length) {
+          s.t.push({ l: Math.floor(s.r() * s.l.length), u: 0, fw: s.r() < .5, c: Math.floor(s.r() * cols.length), v: .8 + s.r() * .5 });
+        }
+        s.t.length = Math.min(s.t.length, want);
+        g.globalCompositeOperation = e.glow();
+        for (var i = 0; i < s.t.length; i++) {
+          var t = s.t[i], l = s.l[t.l], from = t.fw ? l[0] : l[1], to = t.fw ? l[1] : l[0];
+          var a = s.n[from], b = s.n[to], d = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+          t.u += sp * t.v * e.dt / d;
+          if (t.u >= 1) { // arrived: pulse the node, continue along a random link from it
+            b.pulse = 1;
+            var nl = [];
+            for (var q = 0; q < s.l.length; q++) if (s.l[q][0] === to || s.l[q][1] === to) nl.push(q);
+            t.l = nl[Math.floor(s.r() * nl.length)]; t.fw = s.l[t.l][0] === to; t.u = 0;
+            t.c = Math.floor(s.r() * cols.length);
+            continue;
+          }
+          var x = a.x + (b.x - a.x) * t.u, y = a.y + (b.y - a.y) * t.u, col = cols[t.c % cols.length];
+          g.fillStyle = e.a(col, .25); g.beginPath(); g.arc(x, y, 6, 0, 6.2832); g.fill();
+          g.fillStyle = e.rgb(col); g.beginPath(); g.arc(x, y, 2.2, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+        s.n.forEach(function (n) {
+          n.pulse = Math.max(0, n.pulse - e.dt * 2.2);
+          g.fillStyle = e.rgb('--panel'); g.strokeStyle = e.mix('--line', n.c || '--hi', .35 + n.pulse * .65); g.lineWidth = 1.5;
+          g.beginPath(); g.arc(n.x, n.y, n.r + n.pulse * 3, 0, 6.2832); g.fill(); g.stroke();
+        });
+      }
+    });
+  };
+})();
+/* html-motion: expand.js */
+/* html-motion engine: expand. Reach growing around a fixed core (a front sweeps outward and lights up the points
+ * it passes). 2D, PURE function of time: drawAt(t) is exact, so it suits recordings and identical-every-load pages.
+ * Engines.expand(canvas, { W, H, ...options })
+ * Options:
+ *   dur 4        seconds to reach full extent (then holds .6 s and 'freeze'; loop:true repeats)
+ *   rings 4      concentric tiers
+ *   points 160   points that light up as the front passes (seeded scatter)
+ *   maxR .46     final radius as a fraction of min(W,H)
+ *   cx, cy       centre in drawing space (default middle)
+ *   label ''     optional short text under the core
+ *   colors ['--hi','--alt','--ok']   token names by tier
+ *   seed 5
+ */
+(function () {
+  var core = Engines.core;
+  Engines.expand = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: true, dur: function (op) { return op.dur || 4; },
+      init: function (g, e, s) {
+        var r = core.rng(o.seed || 5), n = o.points || 160; s.p = [];
+        for (var i = 0; i < n; i++) s.p.push({ a: r() * 6.2832, d: Math.sqrt(.04 + r() * .96), z: .8 + r() * 1.8 });
+      },
+      draw: function (g, e, s) {
+        var cx = o.cx == null ? e.W / 2 : o.cx, cy = o.cy == null ? e.H / 2 : o.cy, R = (o.maxR || .46) * Math.min(e.W, e.H);
+        var cols = o.colors || ['--hi', '--alt', '--ok'], rings = o.rings || 4, k = core.ease(e.p), front = k * R, i;
+        g.globalCompositeOperation = e.glow();
+        g.lineWidth = 1;
+        for (i = 1; i <= rings; i++) { // guide rings; each brightens once the front has passed it
+          var rr = R * i / rings, on = core.smooth(rr - R / rings, rr, front);
+          g.setLineDash([2, 6]); g.strokeStyle = e.a(on > 0 ? cols[(i - 1) % cols.length] : '--line', .25 + .55 * on);
+          g.beginPath(); g.arc(cx, cy, rr, 0, 6.2832); g.stroke();
+        }
+        g.setLineDash([]);
+        g.strokeStyle = e.a('--hi', .7 * (1 - k) + .2); g.lineWidth = 2;
+        g.beginPath(); g.arc(cx, cy, Math.max(front, 2), 0, 6.2832); g.stroke();
+        for (i = 0; i < s.p.length; i++) {
+          var p = s.p[i], d = p.d * R, lit = core.smooth(d - 18, d + 4, front);
+          if (lit <= 0) continue;
+          var tier = Math.min(rings - 1, Math.floor(p.d * rings));
+          g.fillStyle = e.a(cols[tier % cols.length], .25 + .75 * lit);
+          g.beginPath(); g.arc(cx + Math.cos(p.a) * d, cy + Math.sin(p.a) * d, p.z * (.6 + .4 * lit), 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+        g.fillStyle = e.rgb('--panel'); g.strokeStyle = e.rgb('--hi'); g.lineWidth = 2;
+        g.beginPath(); g.arc(cx, cy, 9, 0, 6.2832); g.fill(); g.stroke();
+        if (o.label) { g.fillStyle = e.rgb('--muted'); g.font = '12px ui-monospace,Consolas,monospace'; g.textAlign = 'center'; g.fillText(o.label, cx, cy + 28); }
+      }
+    });
+  };
+})();
+/* html-motion: split.js */
+/* html-motion engine: split. One stream divides into two branches (a decision, a triage, a fork in the work).
+ * 2D, stateful (seeded). The share going to each branch is live: set({ ratio: .3 }).
+ * Engines.split(canvas, { W, H, ...options })
+ * Options:
+ *   ratio .5       share of particles taking the upper branch (0..1, live)
+ *   count 70       particles in flight
+ *   speed 140      px per second (live: speedScale)
+ *   colors ['--hi','--ok','--alt']   token names: trunk, upper branch, lower branch
+ *   labels ['','']   short text at the end of each branch
+ *   seed 9  bg false
+ */
+(function () {
+  var core = Engines.core, SPLIT = .38;
+  function pt(W, H, branch, u) { // point on the trunk (u < SPLIT) or the chosen branch
+    var x0 = W * .08, xs = W * .46, y0 = H / 2;
+    if (u < SPLIT) return [core.lerp(x0, xs, u / SPLIT), y0];
+    var t = (u - SPLIT) / (1 - SPLIT), ye = branch === 0 ? H * .28 : H * .72, x1 = W * .62, x2 = W * .72, xe = W * .92, m = 1 - t;
+    return [m * m * m * xs + 3 * m * m * t * x1 + 3 * m * t * t * x2 + t * t * t * xe, m * m * m * y0 + 3 * m * m * t * y0 + 3 * m * t * t * ye + t * t * t * ye];
+  }
+  Engines.split = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: false,
+      init: function (g, e, s) {
+        var r = core.rng(o.seed || 9); s.r = r; s.p = [];
+        for (var i = 0; i < (o.count || 70); i++) s.p.push({ u: r(), b: r() < (o.ratio == null ? .5 : o.ratio) ? 0 : 1, v: .8 + r() * .5, z: 1.2 + r() * 1.3 });
+      },
+      draw: function (g, e, s) {
+        var cols = o.colors || ['--hi', '--ok', '--alt'], sp = (o.speed || 140) * (o.speedScale == null ? 1 : o.speedScale), ratio = o.ratio == null ? .5 : o.ratio;
+        var L = e.W * .9, i, u;
+        g.lineCap = 'round'; g.lineJoin = 'round';
+        [0, 1].forEach(function (b) { // channels
+          g.beginPath(); for (u = 0; u <= 1.001; u += .02) { var p = pt(e.W, e.H, b, u); if (u === 0) g.moveTo(p[0], p[1]); else g.lineTo(p[0], p[1]); }
+          g.strokeStyle = e.a('--line', .55); g.lineWidth = 14; g.stroke();
+          g.strokeStyle = e.a('--surface', 1); g.lineWidth = 12; g.stroke();
+        });
+        g.globalCompositeOperation = e.glow();
+        for (i = 0; i < s.p.length; i++) {
+          var q = s.p[i]; q.u += sp * q.v * e.dt / L;
+          if (q.u >= 1) { q.u = 0; q.b = s.r() < ratio ? 0 : 1; }
+          var a = pt(e.W, e.H, q.b, q.u), col = q.u < SPLIT ? cols[0] : cols[1 + q.b], lat = (i % 5 - 2) * 1.6 * (q.u < SPLIT ? 1 : 1 - (q.u - SPLIT));
+          g.fillStyle = e.a(col, .3); g.beginPath(); g.arc(a[0], a[1] + lat, q.z * 2.6, 0, 6.2832); g.fill();
+          g.fillStyle = e.rgb(col); g.beginPath(); g.arc(a[0], a[1] + lat, q.z, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+        var ls = o.labels || ['', ''];
+        g.font = '12px ui-monospace,Consolas,monospace'; g.textAlign = 'right'; g.fillStyle = e.rgb('--muted');
+        if (ls[0]) g.fillText(ls[0], e.W * .92, e.H * .28 - 14);
+        if (ls[1]) g.fillText(ls[1], e.W * .92, e.H * .72 + 24);
+      }
+    });
+  };
+})();
+</script>
+<!-- qsdlc-present:end -->
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--bg); color: var(--ink); scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+h1 { font-size: clamp(2.15rem, 4.4vw, 3.65rem); }
+h2 { font-size: clamp(1.45rem, 2.5vw, 2.05rem); }
+h3 { font-size: 1.15rem; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.9em; }
+a { color: var(--hi); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--ink); }
+:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+
+/* ---- swiss modular monograph frame ---- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  max-width: 82rem;
+  margin: 0 auto;
+  padding: 0.65rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+}
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font: 600 12px/1 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.brand-pip {
+  width: 8px;
+  height: 8px;
+  background: var(--hi);
+  border-radius: 0;
+  display: inline-block;
+}
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  align-items: center;
+}
+.toc a {
+  font: 600 11px/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid transparent;
+}
+.toc a:hover { color: var(--ink); border-bottom-color: var(--hi); }
+
+.deck {
+  max-width: 82rem;
+  margin: 0 auto;
+  padding: 0 1.25rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.band {
+  border-bottom: 1px solid var(--line);
+  padding: 2.25rem 0 2.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.band:last-of-type { border-bottom: 0; }
+
+.band-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.65rem;
+}
+.coord-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+.coord {
+  font: 600 11px/1.2 var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hi);
+}
+.coord-meta {
+  font: 600 11px/1.2 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lede {
+  color: var(--muted);
+  font-size: 1.05rem;
+  max-width: 72ch;
+}
+
+/* ---- SYS.01 hero control stage ---- */
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+.hero-copy {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+.hero-sub { color: var(--muted); font-size: 1.02rem; }
+.stage-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.canvas-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.55rem;
+}
+.canvas-title {
+  font: 600 11px/1.2 var(--font-mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.canvas-box {
+  position: relative;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.canvas-box canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.canvas-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  font: 400 12px/1.4 var(--font-mono);
+  color: var(--muted);
+}
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.swatch {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  border-radius: 0;
+}
+.swatch-hi { background: var(--hi); }
+.swatch-ok { background: var(--ok); }
+.swatch-alt { background: var(--alt); }
+.swatch-risk { background: var(--risk); }
+
+.ctrl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+.btn {
+  appearance: none;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.42rem 0.72rem;
+  font: 600 11px/1.2 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--hi); }
+.btn[aria-pressed="true"] {
+  background: var(--hi);
+  color: var(--bg);
+  border-color: var(--hi);
+}
+
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.kpi-cell {
+  background: var(--surface);
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.kpi-cell .numeral {
+  font-size: clamp(1.9rem, 3vw, 2.55rem);
+  color: var(--ink);
+}
+.kpi-cell small {
+  font: 400 12px/1.35 var(--font-mono);
+  color: var(--muted);
+}
+
+/* ---- SYS.02 before-after-hinge + slope ---- */
+.hinge-controls {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.15rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+.hinge-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex: 1 1 18rem;
+}
+.hinge-slider-wrap label {
+  font: 600 11px/1.2 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.hinge-range {
+  flex: 1 1 auto;
+  accent-color: var(--hi);
+  cursor: pointer;
+}
+.hinge-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9rem, 11.5rem) minmax(0, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.hinge-col {
+  background: var(--surface);
+  padding: 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+.hinge-col.is-dim { opacity: 0.58; }
+.hinge-col.is-focus { background: var(--panel); }
+.hinge-spine {
+  background: var(--bg);
+  padding: 1.1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  gap: 0.85rem;
+}
+.hinge-tag {
+  font: 600 11px/1.2 var(--font-mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  width: fit-content;
+}
+.tag-v1 { color: var(--muted); background: var(--bg); }
+.tag-v2 { color: var(--ok); background: var(--bg); border-color: var(--ok); }
+.tag-delta { color: var(--alt); background: var(--surface); border-color: var(--alt); }
+.tag-ill { color: var(--alt); background: var(--surface); border-color: var(--alt); }
+
+.cmp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.cmp-list li {
+  border-top: 1px solid var(--line);
+  padding-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.cmp-list li:first-child { border-top: 0; padding-top: 0; }
+.cmp-key {
+  font: 600 11px/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.cmp-val { font-size: 0.96rem; color: var(--ink); }
+.delta-pill {
+  font: 600 11px/1.25 var(--font-mono);
+  color: var(--ok);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0.35rem 0.45rem;
+  border-radius: var(--radius);
+  width: 100%;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 27rem), 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* ---- matrix grid for factory skills & tracks ---- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.5rem), 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.cell-item {
+  background: var(--surface);
+  padding: 1rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.cell-code {
+  font: 600 11px/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--alt);
+}
+.cell-item h3 { font-size: 1.05rem; color: var(--ink); }
+.cell-item p { font-size: 0.92rem; color: var(--muted); }
+
+/* ---- interactive track badges & split scenario bar ---- */
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font: 600 12px/1.4 var(--font-mono);
+  color: var(--ink);
+}
+.note-line {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.nowrap { white-space: nowrap; }
+.table-wrap table { min-width: 34rem; }
+
+/* ---- SYS.06 provenance footer ---- */
+.provenance {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.canvas-box.diagram-box { padding: 1rem; }
+.canvas-box.diagram-box .kit-plot > svg { margin-inline: auto; }
+@media (max-width: 880px) {
+  .topbar { position: static; }
+  .hero-grid { grid-template-columns: 1fr; }
+  .hinge-grid { grid-template-columns: 1fr; }
+  .hinge-spine {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    text-align: left;
+  }
+  .delta-pill { width: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .hinge-col.is-dim { opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<script type="application/json" id="qsdlc-facts">
+{
+  "source_repo": "c:\\Users\\TrevorKoch\\Documents\\QSDLC",
+  "baseline_commit": "675c445",
+  "metrics": {
+    "skills_v1": 10,
+    "skills_v2": 24,
+    "skills_added": 14,
+    "templates_v1": 5,
+    "templates_v2": 14,
+    "verifier_gates_v1": 0,
+    "verifier_gates_v2": 12,
+    "lint_gates_html": 16,
+    "self_tests_v1": 0,
+    "self_tests_v2": 303,
+    "self_tests_shared": 49,
+    "self_tests_present": 103,
+    "self_tests_herdr": 37,
+    "self_tests_guard": 76,
+    "self_tests_sweep": 26,
+    "self_tests_archify": 6,
+    "self_tests_graphify": 6,
+    "tracks": 5,
+    "motion_engines": 9,
+    "matrix_cards": 57,
+    "archetypes": 6,
+    "kit_chart_types": 8,
+    "herdr_panes_build": 7
+  }
+}
+</script>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="brand-mark"><span class="brand-pip" aria-hidden="true"></span>QSDLC // V2 CONTINUOUS FACTORY</span>
+    <nav class="toc" aria-label="Presentation sections">
+      <a href="#sys-01">SYS.01 Control</a>
+      <a href="#sys-02">SYS.02 Hinge</a>
+      <a href="#sys-03">SYS.03 Factory</a>
+      <a href="#sys-04">SYS.04 Trust</a>
+      <a href="#sys-05">SYS.05 Craft+Herdr</a>
+      <a href="#sys-06">SYS.06 Ledger</a>
+    </nav>
+  </div>
+</header>
+
+<main class="deck">
+
+  <!-- SYS.01 // CONTROL PLANE & HERO RELAY NETWORK -->
+  <section id="sys-01" class="band" aria-labelledby="h-sys-01">
+    <div class="band-head" data-reveal>
+      <div class="coord-row">
+        <span class="coord">SYS.01 // CONTROL PLANE ARCHITECTURE</span>
+        <span class="coord-meta">BASELINE 675c445 -> V2.0.0 OVERHAUL</span>
+      </div>
+      <h1>From One-Off Feature Specs to an Enforced Continuous Software Factory</h1>
+      <p class="lede">
+        QSDLC v2 preserves the structured human-in-the-loop discipline of Intent, Spec, Plan, Eval, and Docs while adding autonomous ticket triage, scheduled codebase auditing, deterministic verification gates, Herdr multi-pane orchestration, brand-bound motion artifacts, and Archify + Graphify diagram and AST knowledge-graph tools.
+      </p>
+    </div>
+
+    <div class="hero-grid" data-reveal>
+      <div class="hero-copy">
+        <div class="stack">
+          <span class="eyebrow">Two Execution Modes Under One Ledger</span>
+          <h2>Interactive rigor for greenfield work; bounded autonomy for recurring queues.</h2>
+          <p class="hero-sub">
+            Mode A keeps human alignment through back-and-forth interviews before writing code. Mode B lets scheduled cron/ritual loops consume GitHub issues, bug reports, security checks, and product discovery opportunities using a shared <code>.qsdlc/</code> ledger and strict exit codes.
+          </p>
+        </div>
+
+        <div class="ctrl-row" role="group" aria-label="Focus relay mode">
+          <span class="eyebrow">Relay lens:</span>
+          <button type="button" class="btn" data-graph-mode="all" aria-pressed="true">Full Control Plane</button>
+          <button type="button" class="btn" data-graph-mode="interactive" aria-pressed="false">Interactive Track</button>
+          <button type="button" class="btn" data-graph-mode="factory" aria-pressed="false">Scheduled Factory</button>
+        </div>
+
+        <p class="note-line" id="graph-mode-caption">
+          Showing full 14-node topology: intake queues, triage, design/build specialists, adversarial review, deterministic verifiers, and sweep ledger.
+        </p>
+      </div>
+
+      <div class="stage-card">
+        <div class="canvas-head">
+          <span class="canvas-title">Live Motion Engine // Engines.graph (Relay Topology)</span>
+          <span class="coord-meta">TRAVELERS = AGENT HANDOFFS</span>
+        </div>
+        <div class="canvas-box">
+          <canvas id="canvas-graph" width="760" height="420" role="img" aria-label="Network topology of QSDLC v2 skills with packets traveling between intake hubs, orchestrators, and verification gates."></canvas>
+          <noscript><p class="note-line">JavaScript disabled: relay packets connect Intake -> qsdlc-triage -> qsdlc-factory -> Build -> Review -> qsdlc-verify / qsdlc-guard -> qsdlc-sweep.</p></noscript>
+        </div>
+        <div class="canvas-legend">
+          <div class="legend-items">
+            <span class="legend-item"><span class="swatch swatch-hi" aria-hidden="true"></span>Orchestrator hubs</span>
+            <span class="legend-item"><span class="swatch swatch-ok" aria-hidden="true"></span>Verification &amp; guard</span>
+            <span class="legend-item"><span class="swatch swatch-alt" aria-hidden="true"></span>Scheduled factory relays</span>
+          </div>
+          <span data-source="skills.md">Source: skills/ tree</span>
+        </div>
+      </div>
+    </div>
+
+    <section class="kpi-strip" aria-label="Observed QSDLC v2 metrics" data-reveal>
+      <div class="kpi-cell">
+        <span class="eyebrow">Installed Skills</span>
+        <span class="numeral" data-count="24" data-source="qsdlc-facts.metrics.skills_v2">24</span>
+        <small>Up from 10 in v1 (+14 new)</small>
+      </div>
+      <div class="kpi-cell">
+        <span class="eyebrow">Shared Templates</span>
+        <span class="numeral" data-count="14" data-source="qsdlc-facts.metrics.templates_v2">14</span>
+        <small>13 Markdown + sources.template.yml</small>
+      </div>
+      <div class="kpi-cell">
+        <span class="eyebrow">Verified Self-Tests</span>
+        <span class="numeral" data-count="303" data-source="qsdlc-facts.metrics.self_tests_v2">303</span>
+        <small>0 failures across 7 test suites</small>
+      </div>
+      <div class="kpi-cell">
+        <span class="eyebrow">Artifact Validators</span>
+        <span class="numeral" data-count="28" data-source="qsdlc-facts.metrics.lint_gates_html">28</span>
+        <small>12 SDLC (V1-V12) + 16 HTML (L01-L16)</small>
+      </div>
+      <div class="kpi-cell">
+        <span class="eyebrow">Routing Tracks</span>
+        <span class="numeral" data-count="5" data-source="qsdlc-facts.metrics.tracks">5</span>
+        <small>quick, bugfix, delta, full, discovery</small>
+      </div>
+      <div class="kpi-cell">
+        <span class="eyebrow">Motion Engines</span>
+        <span class="numeral" data-count="9" data-source="qsdlc-facts.metrics.motion_engines">9</span>
+        <small>Canvas 2D + GPU shaders inlined</small>
+      </div>
+    </section>
+  </section>
+
+  <!-- SYS.02 // V1 VS V2 STRUCTURAL HINGE + BEFORE-AFTER SLOPE -->
+  <section id="sys-02" class="band" aria-labelledby="h-sys-02">
+    <div class="band-head" data-reveal>
+      <div class="coord-row">
+        <span class="coord">SYS.02 // BEFORE-AFTER HINGE (V1 HEAD -> V2 OVERHAUL)</span>
+        <span class="coord-meta">ARCHETYPE: COMPARE-SPLIT // BI: SLOPE</span>
+      </div>
+      <h2 id="h-sys-02">Structural Delta Across Every SDLC Axis</h2>
+      <p class="lede">
+        The central hinge joins QSDLC v1 (baseline commit <code>675c445</code>) on the left with v2 on the right, pinning each delta directly on the divider spine. Move the hinge control to spotlight either state or inspect the delta bridge.
+      </p>
+    </div>
+
+    <div class="hinge-controls" data-reveal>
+      <div class="hinge-slider-wrap">
+        <label for="hinge-range">Hinge balance</label>
+        <input id="hinge-range" class="hinge-range" type="range" min="0" max="100" value="50" aria-describedby="hinge-readout">
+      </div>
+      <div class="ctrl-row">
+        <button type="button" class="btn" data-hinge-preset="15" aria-pressed="false">Focus V1</button>
+        <button type="button" class="btn" data-hinge-preset="50" aria-pressed="true">Split 50 / 50</button>
+        <button type="button" class="btn" data-hinge-preset="85" aria-pressed="false">Focus V2</button>
+      </div>
+      <span id="hinge-readout" class="coord-meta">HINGE 50% // BALANCED COMPARISON</span>
+    </div>
+
+    <div class="hinge-grid" id="hinge-stage" data-reveal>
+      <article class="hinge-col" id="hinge-v1">
+        <span class="hinge-tag tag-v1">BEFORE // QSDLC V1 (HEAD 675c445)</span>
+        <h3>Interactive Feature Only</h3>
+        <ul class="cmp-list">
+          <li>
+            <span class="cmp-key">Skill Surface</span>
+            <span class="cmp-val">10 skills focused solely on linear feature delivery (Interview -> Design -> Build -> QA -> PR).</span>
+          </li>
+          <li>
+            <span class="cmp-key">Execution Cadence</span>
+            <span class="cmp-val">Manual human-initiated sessions only; no triage, backlog funnel, or scheduled audit ritual.</span>
+          </li>
+          <li>
+            <span class="cmp-key">Quality Enforcement</span>
+            <span class="cmp-val">Prompt guidance only (0 Node validators, 0 automated self-test suites, no command guard).</span>
+          </li>
+          <li>
+            <span class="cmp-key">Agent Orchestration</span>
+            <span class="cmp-val">Single-conversation context or ad-hoc subagent calls without pane-level relay rules.</span>
+          </li>
+          <li>
+            <span class="cmp-key">HTML Deliverables</span>
+            <span class="cmp-val">Static ad-hoc HTML snippets linking external CDN scripts with no brand binding or visual QA.</span>
+          </li>
+        </ul>
+      </article>
+
+      <div class="hinge-spine" aria-label="Delta bridge summary">
+        <span class="hinge-tag tag-delta">DELTA SPINE</span>
+        <div class="delta-pill" data-source="qsdlc-facts.metrics.skills_added">+14 Skills</div>
+        <div class="delta-pill" data-source="qsdlc-facts.metrics.templates_v2">+9 Templates</div>
+        <div class="delta-pill" data-source="qsdlc-facts.metrics.verifier_gates_v2">+12 V1-V12 Gates</div>
+        <div class="delta-pill" data-source="qsdlc-facts.metrics.self_tests_v2">+303 Self-Tests</div>
+        <div class="delta-pill" data-source="qsdlc-facts.metrics.motion_engines">+9 Motion Engines</div>
+      </div>
+
+      <article class="hinge-col is-focus" id="hinge-v2">
+        <span class="hinge-tag tag-v2">AFTER // QSDLC V2.0.0 FACTORY</span>
+        <h3>Continuous Supervised Engineering System</h3>
+        <ul class="cmp-list">
+          <li>
+            <span class="cmp-key">Skill Surface</span>
+            <span class="cmp-val">24 coordinated skills spanning continuous factory stages, adversarial review, Herdr relay, Archify + Graphify tools, and motion HTML.</span>
+          </li>
+          <li>
+            <span class="cmp-key">Execution Cadence</span>
+            <span class="cmp-val">5 tracks (<code>quick</code>, <code>bugfix</code>, <code>delta</code>, <code>full</code>, <code>discovery</code>) driven interactively or via <code>qsdlc-ritual</code> cron loops.</span>
+          </li>
+          <li>
+            <span class="cmp-key">Quality Enforcement</span>
+            <span class="cmp-val">Deterministic <code>qsdlc-lint.mjs</code> (V1-V12), <code>qsdlc-guard</code> secret/danger block, <code>qsdlc-sweep</code> watermarks, and 303 passing tests.</span>
+          </li>
+          <li>
+            <span class="cmp-key">Agent Orchestration &amp; Codebase Graph</span>
+            <span class="cmp-val"><code>qsdlc-herdr</code> multi-pane relays plus <code>qsdlc-graphify</code> AST query/affected coupling checks with zero-LLM incremental refreshes.</span>
+          </li>
+          <li>
+            <span class="cmp-key">HTML Deliverables &amp; Diagrams</span>
+            <span class="cmp-val">Offline single-file HTML bound via <code>brand_probe.mjs</code>, rolled across 57 matrix cards, upgraded with <code>qsdlc-archify</code> (10 diagram types), and verified by <code>lint.mjs</code> + <code>shoot.mjs</code>.</span>
+          </li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="two-col" data-reveal>
+      <div class="card">
+        <script data-mounted="1" type="application/json" data-chart="slope">
+{
+  "title": "QSDLC capability growth: baseline v1 vs overhaul v2",
+  "desc": "Slope graph showing directly observed repository counts between baseline commit 675c445 and QSDLC v2 working tree.",
+  "source": "README.md",
+  "fromLabel": "v1 (HEAD)",
+  "toLabel": "v2 (Now)",
+  "better": "higher",
+  "data": [
+    { "label": "Core skills", "from": 10, "to": 24 },
+    { "label": "Shared templates", "from": 5, "to": 14 },
+    { "label": "Lint gates (V+L)", "from": 0, "to": 28 },
+    { "label": "Matrix design cards", "from": 0, "to": 57 }
+  ]
+}
+        </script>
+<!-- qsdlc-present:render -->
+<figure class="kit-chart" data-chart="slope" data-source="README.md"><figcaption class="kit-cap"><span class="kit-title">QSDLC capability growth: baseline v1 vs overhaul v2</span></figcaption><div class="kit-plot"><svg viewBox="0 0 480 180" role="img" aria-labelledby="kc1ee62rz-t kc1ee62rz-d" style="max-width:672px;min-width:min(100%,400px)"><title id="kc1ee62rz-t">QSDLC capability growth: baseline v1 vs overhaul v2</title><desc id="kc1ee62rz-d">Slope graph showing directly observed repository counts between baseline commit 675c445 and QSDLC v2 working tree.</desc><text x="168" y="14" text-anchor="end" style="fill:var(--muted);font:600 11px var(--font-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums;text-transform:uppercase;letter-spacing:.08em">v1 (HEAD)</text><text x="312" y="14" text-anchor="start" style="fill:var(--muted);font:600 11px var(--font-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums;text-transform:uppercase;letter-spacing:.08em">v2 (Now)</text><line x1="168" y1="28" x2="168" y2="162" style="stroke:var(--line);stroke-width:1"/><line x1="312" y1="28" x2="312" y2="162" style="stroke:var(--line);stroke-width:1"/><line x1="168" y1="134.6" x2="312" y2="104.6" style="stroke:var(--ok);stroke-width:2" class="kit-line"/><circle cx="168" cy="134.6" r="3.5" style="fill:var(--ok)"/><circle cx="312" cy="104.6" r="3.5" style="fill:var(--ok)"/><text x="158" y="138.6" text-anchor="end" style="fill:var(--ink);font:400 11.5px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">Core skills  10</text><text x="322" y="115.1" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">24  +14</text><line x1="168" y1="145.3" x2="312" y2="126" style="stroke:var(--ok);stroke-width:2" class="kit-line"/><circle cx="168" cy="145.3" r="3.5" style="fill:var(--ok)"/><circle cx="312" cy="126" r="3.5" style="fill:var(--ok)"/><text x="158" y="153.6" text-anchor="end" style="fill:var(--ink);font:400 11.5px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">Shared templates  5</text><text x="322" y="130.1" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">14  +9</text><line x1="168" y1="156" x2="312" y2="96.1" style="stroke:var(--ok);stroke-width:2" class="kit-line"/><circle cx="168" cy="156" r="3.5" style="fill:var(--ok)"/><circle cx="312" cy="96.1" r="3.5" style="fill:var(--ok)"/><text x="158" y="168.6" text-anchor="end" style="fill:var(--ink);font:400 11.5px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">Lint gates (V+L)  0</text><text x="322" y="100.1" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">28  +28</text><line x1="168" y1="156" x2="312" y2="34" style="stroke:var(--ok);stroke-width:2" class="kit-line"/><circle cx="168" cy="156" r="3.5" style="fill:var(--ok)"/><circle cx="312" cy="34" r="3.5" style="fill:var(--ok)"/><text x="158" y="183.6" text-anchor="end" style="fill:var(--ink);font:400 11.5px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">Matrix design car…  0</text><text x="322" y="38" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">57  +57</text></svg></div><p class="kit-src">Source: README.md</p><details class="kit-details"><summary>Data table</summary><div class="table-wrap" tabindex="0"><table><caption class="sr">QSDLC capability growth: baseline v1 vs overhaul v2</caption><thead><tr><th scope="col">Item</th><th scope="col" class="num">v1 (HEAD)</th><th scope="col" class="num">v2 (Now)</th><th scope="col" class="num">Change</th></tr></thead><tbody><tr><th scope="row">Core skills</th><td class="num">10</td><td class="num">24</td><td class="num">+14</td></tr><tr><th scope="row">Shared templates</th><td class="num">5</td><td class="num">14</td><td class="num">+9</td></tr><tr><th scope="row">Lint gates (V+L)</th><td class="num">0</td><td class="num">28</td><td class="num">+28</td></tr><tr><th scope="row">Matrix design cards</th><td class="num">0</td><td class="num">57</td><td class="num">+57</td></tr></tbody></table></div></details></figure>
+<!-- /qsdlc-present:render -->
+
+      </div>
+      <div class="card">
+        <span class="eyebrow">Why Additive v2 Preserves v1 Contracts</span>
+        <h3>Zero Breaking Changes to Core Human Rituals</h3>
+        <p class="lede">
+          Existing projects using <code>Intent.md</code>, <code>spec.md</code>, <code>plan.md</code>, <code>eval.md</code>, and <code>docmd.md</code> continue working unchanged. Every new factory artifact — <code>state.md</code>, <code>policy.md</code>, <code>ledger.jsonl</code>, <code>tickets/</code>, and <code>findings/</code> — lives additively inside <code>.qsdlc/</code>.
+        </p>
+        <div class="table-wrap" tabindex="0">
+          <table>
+            <caption class="sr">QSDLC v2 additive artifact paths and terminal state contract</caption>
+            <thead>
+              <tr>
+                <th scope="col">Artifact</th>
+                <th scope="col">Owner Skill</th>
+                <th scope="col">Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row" class="nowrap"><code>.qsdlc/policy.md</code></th>
+                <td class="nowrap"><code>qsdlc-factory</code></td>
+                <td>Declares autonomy caps, allowed tracks, test command, and protected branches</td>
+              </tr>
+              <tr>
+                <th scope="row" class="nowrap"><code>.qsdlc/state.md</code></th>
+                <td class="nowrap"><code>qsdlc-sweep</code></td>
+                <td>Cross-run cursor, monotonic sweep watermark, active queue position</td>
+              </tr>
+              <tr>
+                <th scope="row" class="nowrap"><code>.qsdlc/ledger.jsonl</code></th>
+                <td class="nowrap"><code>qsdlc-log.mjs</code></td>
+                <td>Append-only structured run history enforcing enum exit states</td>
+              </tr>
+              <tr>
+                <th scope="row" class="nowrap"><code>.qsdlc/tickets/*.md</code></th>
+                <td class="nowrap"><code>qsdlc-triage</code></td>
+                <td>Classified intake packets with blast-radius score and track route</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SYS.03 // CONTINUOUS FACTORY & TRACK ROUTING -->
+  <section id="sys-03" class="band" aria-labelledby="h-sys-03">
+    <div class="band-head" data-reveal>
+      <div class="coord-row">
+        <span class="coord">SYS.03 // CONTINUOUS SOFTWARE FACTORY</span>
+        <span class="coord-meta">PSACK + POTETOS ADAPTED TO QSDLC</span>
+      </div>
+      <h2 id="h-sys-03">9 Factory Skills Funneling Support Queues, Bugs, Audits &amp; Discovery</h2>
+      <p class="lede">
+        Instead of forcing every bug fix or nightly health check through a full human interview, <code>qsdlc-triage</code> scores risk and routes work onto 5 concrete tracks while <code>qsdlc-ritual</code> schedules repeatable unsupervised sweeps.
+      </p>
+    </div>
+
+    <div class="stage-card" data-reveal>
+      <div class="canvas-head">
+        <span class="canvas-title">Live Motion Engine // Engines.split (Track &amp; Queue Router)</span>
+        <span class="hinge-tag tag-ill">ILLUSTRATIVE SCENARIO ROUTING</span>
+      </div>
+      <div class="ctrl-row" role="group" aria-label="Queue routing scenario">
+        <span class="eyebrow">Queue preset:</span>
+        <button type="button" class="btn" data-split-ratio="0.72" data-split-note="Illustrative scenario: Triage routes 72% of inbound support bugs onto fast quick/bugfix verification tracks and 28% to full architectural spec." aria-pressed="true">Support Bug Queue (72 / 28)</button>
+        <button type="button" class="btn" data-split-ratio="0.34" data-split-note="Illustrative scenario: Product roadmap intake sends 34% as low-risk deltas and escalates 66% into full Intent/Spec/Design review." aria-pressed="false">Feature Backlog (34 / 66)</button>
+        <button type="button" class="btn" data-split-ratio="0.86" data-split-note="Illustrative scenario: Scheduled nightly discovery sweep auto-patches 86% low-blast findings and flags 14% for human review." aria-pressed="false">Nightly Audit Sweep (86 / 14)</button>
+      </div>
+      <div class="canvas-box">
+        <canvas id="canvas-split" width="1160" height="320" role="img" aria-label="Split stream animation dividing one unified work queue into fast-track verification and full specification review branches."></canvas>
+        <noscript><p class="note-line">JavaScript disabled: illustrative routing divides inbound queues into fast verification tracks (top branch) vs full design tracks (bottom branch).</p></noscript>
+      </div>
+      <div class="canvas-legend">
+        <span id="split-caption" data-illustrative="true">Illustrative scenario: Triage routes 72% of inbound support bugs onto fast quick/bugfix verification tracks and 28% to full architectural spec.</span>
+        <span>Speed &amp; density = queue branch share</span>
+      </div>
+    </div>
+
+    <div class="card" data-reveal>
+      <div class="canvas-head">
+        <span class="canvas-title">Execution Architecture // Continuous Software Factory DAG</span>
+        <span class="coord-meta">SOURCE: CONVENTIONS.MD · INLINE SVG</span>
+      </div>
+      <div class="canvas-box diagram-box">
+      <script data-mounted="1" type="application/json" data-diagram>
+{
+  "title": "Continuous Software Factory execution DAG",
+  "desc": "Top-to-bottom architecture showing scheduled rituals and codebase audits feeding triage, branching into build and parallel guard/review gates, applying bounded corrections when needed, and sealing runs through verify and sweep.",
+  "source": "conventions.md",
+  "direction": "TB",
+  "routing": "orthogonal",
+  "groups": [
+    { "id": "intake", "label": "01 // Intake & Schedule" },
+    { "id": "build", "label": "02 // Spec, Build & Gate" },
+    { "id": "trust", "label": "03 // Seal & Watermark" }
+  ],
+  "nodes": [
+    { "id": "ritual", "label": "qsdlc-ritual", "sub": "cron trigger", "status": "running", "shape": "round", "group": "intake" },
+    { "id": "audit", "label": "qsdlc-audit", "sub": "bugs & drift", "status": "done", "shape": "rect", "group": "intake" },
+    { "id": "triage", "label": "qsdlc-triage", "sub": "5 tracks", "status": "done", "shape": "diamond", "group": "intake" },
+    { "id": "build", "label": "Spec + Build", "sub": "herdr panes", "status": "running", "shape": "rect", "group": "build" },
+    { "id": "guard", "label": "qsdlc-guard", "sub": "secrets/cmd", "status": "done", "shape": "pill", "group": "build" },
+    { "id": "review", "label": "qsdlc-review", "sub": "diff vs spec", "status": "done", "shape": "hex", "group": "build" },
+    { "id": "correct", "label": "qsdlc-correct", "sub": "bounded fix", "status": "todo", "shape": "rect", "group": "build" },
+    { "id": "verify", "label": "qsdlc-verify", "sub": "V1-V12 pass", "status": "done", "shape": "pill", "group": "trust" },
+    { "id": "sweep", "label": "qsdlc-sweep", "sub": "watermark + pr", "status": "done", "shape": "round", "group": "trust" }
+  ],
+  "edges": [
+    { "from": "ritual", "to": "triage", "label": "schedule" },
+    { "from": "audit", "to": "triage", "label": "findings" },
+    { "from": "triage", "to": "build", "label": "track" },
+    { "from": "build", "to": "guard", "label": "pre-check" },
+    { "from": "build", "to": "review", "label": "diff" },
+    { "from": "review", "to": "correct", "kind": "optional", "label": "gaps" },
+    { "from": "guard", "to": "verify", "label": "clean" },
+    { "from": "review", "to": "verify", "label": "pass" },
+    { "from": "correct", "to": "verify", "kind": "handoff", "label": "patched" },
+    { "from": "verify", "to": "sweep", "label": "evidence" }
+  ]
+}
+      </script>
+<!-- qsdlc-present:render -->
+<figure class="kit-diagram" data-diagram data-source="conventions.md"><div class="kit-plot" tabindex="0"><svg viewBox="-7.5 -44 1977.8 984.5" role="img" aria-labelledby="dgx3w386-t dgx3w386-d" style="max-width:2571px;min-width:760px"><title id="dgx3w386-t">Continuous Software Factory execution DAG</title><desc id="dgx3w386-d">Top-to-bottom architecture showing scheduled rituals and codebase audits feeding triage, branching into build and parallel guard/review gates, applying bounded corrections when needed, and sealing runs through verify and sweep.</desc><defs><marker id="dgx3w386-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--muted)"/></marker></defs><g class="dg-group" data-group="intake"><rect x="6.5" y="-30" width="458.2" height="261.5" style="fill:color-mix(in srgb,var(--ink) 4%,transparent);stroke:var(--line);stroke-width:1;stroke-dasharray:5 4"/><text x="16.5" y="-13" style="fill:var(--muted);font:600 11px var(--font-mono,ui-monospace,monospace);letter-spacing:.1em;text-transform:uppercase">01 // Intake &amp; Schedule</text></g><g class="dg-group" data-group="build"><rect x="617.8" y="277.5" width="454.3" height="371" style="fill:color-mix(in srgb,var(--ink) 4%,transparent);stroke:var(--line);stroke-width:1;stroke-dasharray:5 4"/><text x="627.8" y="294.5" style="fill:var(--muted);font:600 11px var(--font-mono,ui-monospace,monospace);letter-spacing:.1em;text-transform:uppercase">02 // Spec, Build &amp; Gate</text></g><g class="dg-group" data-group="trust"><rect x="1235.3" y="694.5" width="216.3" height="232" style="fill:color-mix(in srgb,var(--ink) 4%,transparent);stroke:var(--line);stroke-width:1;stroke-dasharray:5 4"/><text x="1245.3" y="711.5" style="fill:var(--muted);font:600 11px var(--font-mono,ui-monospace,monospace);letter-spacing:.1em;text-transform:uppercase">03 // Seal &amp; Watermark</text></g><path class="dg-edge" data-from="ritual" data-to="triage" data-dash="" d="M117.9 47L117.9 86Q117.9 93 124.9 93L346.5 93Q353.5 93 353.5 100L353.5 139" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-linejoin:round"/><path class="dg-edge" data-from="audit" data-to="triage" data-dash="" d="M353.5 47L353.5 139" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-linejoin:round"/><path class="dg-edge" data-from="triage" data-to="build" data-dash="" d="M353.5 215.5L353.5 236Q353.5 243 360.5 243L841.5 243Q848.5 243 848.5 250L848.5 307.5" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-linejoin:round"/><path class="dg-edge" data-from="build" data-to="guard" data-dash="" d="M848.5 354.5L848.5 393.5Q848.5 400.5 855.5 400.5L959.4 400.5Q966.4 400.5 966.4 407.5L966.4 446.5" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-linejoin:round"/><path class="dg-edge" data-from="build" data-to="review" data-dash="" d="M848.5 354.5L848.5 381.1Q848.5 388.1 841.5 388.1L737.7 388.1Q730.7 388.1 730.7 395.1L730.7 446.5" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-linejoin:round"/><path class="dg-edge" data-from="review" data-to="correct" data-dash="6 4" d="M730.7 493.5L730.7 520.1Q730.7 527.1 737.7 527.1L959.4 527.1Q966.4 527.1 966.4 534.1L966.4 585.5" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:6 4;stroke-linejoin:round"/><path class="dg-edge" data-from="guard" data-to="verify" data-dash="" d="M966.4 493.5L966.4 544.3Q966.4 551.3 973.4 551.3L1713.6 551.3Q1720.6 551.3 1720.6 558.3L1720.6 653Q1720.6 660 1713.6 660L1350.5 660Q1343.5 660 1343.5 667L1343.5 724.5" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-linejoin:round"/><path class="dg-edge" data-from="review" data-to="verify" data-dash="" d="M730.7 493.5L730.7 544.3Q730.7 551.3 737.7 551.3L1949.3 551.3Q1956.3 551.3 1956.3 558.3L1956.3 659.1Q1956.3 666.1 1949.3 666.1L1350.5 666.1Q1343.5 666.1 1343.5 673.1L1343.5 724.5" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-linejoin:round"/><path class="dg-edge" data-from="correct" data-to="verify" data-dash="" d="M966.4 632.5L966.4 640.8Q966.4 647.8 973.4 647.8L1336.5 647.8Q1343.5 647.8 1343.5 654.8L1343.5 724.5" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--ink);stroke-width:2.25;stroke-linejoin:round"/><path class="dg-edge" data-from="verify" data-to="sweep" data-dash="" d="M1343.5 771.5L1343.5 863.5" marker-end="url(#dgx3w386-a)" style="fill:none;stroke:var(--muted);stroke-width:1.5;stroke-linejoin:round"/><g class="dg-node" data-id="ritual" data-status="running"><title>qsdlc-ritual (running)</title><rect x="22.5" y="0" width="190.6" height="47" rx="10" style="fill:var(--surface);stroke:var(--hi);stroke-width:2.25"/><path d="M38.55 17.5l10 6-10 6z" style="fill:var(--hi);stroke:none"/><text x="128.9" y="21" text-anchor="middle" style="fill:var(--ink);font:600 13px var(--font-sans,ui-sans-serif,system-ui,sans-serif)">qsdlc-ritual</text><text x="128.9" y="35" text-anchor="middle" style="fill:var(--muted);font:500 10.5px var(--font-mono,ui-monospace,monospace)">running · cron trigger</text></g><g class="dg-node" data-id="audit" data-status="done"><title>qsdlc-audit (done)</title><rect x="267.7" y="0" width="171.7" height="47" style="fill:var(--surface);stroke:var(--ok);stroke-width:1.25;rx:var(--radius,2px)"/><path d="M282.69999999999993 23.5l3.5 3.5 6.5-7" style="fill:none;stroke:var(--ok);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"/><text x="364.5" y="21" text-anchor="middle" style="fill:var(--ink);font:600 13px var(--font-sans,ui-sans-serif,system-ui,sans-serif)">qsdlc-audit</text><text x="364.5" y="35" text-anchor="middle" style="fill:var(--muted);font:500 10.5px var(--font-mono,ui-monospace,monospace)">done · bugs &amp; drift</text></g><g class="dg-node" data-id="triage" data-status="done"><title>qsdlc-triage (done)</title><polygon points="353.5,139 448.8,177.3 353.5,215.5 258.3,177.3" style="fill:var(--surface);stroke:var(--ok);stroke-width:1.25"/><path d="M348.54999999999995 154l3.5 3.5 6.5-7" style="fill:none;stroke:var(--ok);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"/><text x="353.5" y="174.8" text-anchor="middle" style="fill:var(--ink);font:600 13px var(--font-sans,ui-sans-serif,system-ui,sans-serif)">qsdlc-triage</text><text x="353.5" y="188.8" text-anchor="middle" style="fill:var(--muted);font:500 10.5px var(--font-mono,ui-monospace,monospace)">done · 5 tracks</text></g><g class="dg-node" data-id="build" data-status="running"><title>Spec + Build (running)</title><rect x="756.4" y="307.5" width="184.3" height="47" style="fill:var(--surface);stroke:var(--hi);stroke-width:2.25;rx:var(--radius,2px)"/><path d="M772.37 325l10 6-10 6z" style="fill:var(--hi);stroke:none"/><text x="859.5" y="328.5" text-anchor="middle" style="fill:var(--ink);font:600 13px var(--font-sans,ui-sans-serif,system-ui,sans-serif)">Spec + Build</text><text x="859.5" y="342.5" text-anchor="middle" style="fill:var(--muted);font:500 10.5px var(--font-mono,ui-monospace,monospace)">running · herdr panes</text></g><g class="dg-node" data-id="guard" data-status="done"><title>qsdlc-guard (done)</title><rect x="876.7" y="446.5" width="179.4" height="47" rx="23.5" style="fill:var(--surface);stroke:var(--ok);stroke-width:1.25"/><path d="M891.6699999999998 470l3.5 3.5 6.5-7" style="fill:none;stroke:var(--ok);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"/><text x="977.4" y="467.5" text-anchor="middle" style="fill:var(--ink);font:600 13px var(--font-sans,ui-sans-serif,system-ui,sans-serif)">qsdlc-guard</text><text x="977.4" y="481.5" text-anchor="middle" style="fill:var(--muted);font:500 10.5px var(--font-mono,ui-monospace,monospace)">done · secrets/cmd</text></g><g class="dg-node" data-id="review" data-status="done"><title>qsdlc-review (done)</title><polygon points="647.8,446.5 813.5,446.5 827.5,470 813.5,493.5 647.8,493.5 633.8,470" style="fill:var(--surface);stroke:var(--ok);stroke-width:1.25"/><path d="M648.8199999999999 470l3.5 3.5 6.5-7" style="fill:none;stroke:var(--ok);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"/><text x="741.7" y="467.5" text-anchor="middle" style="fill:var(--ink);font:600 13px var(--font-sans,ui-sans-serif,system-ui,sans-serif)">qsdlc-review</text><text x="741.7" y="481.5" text-anchor="middle" style="fill:var(--muted);font:500 10.5px var(--font-mono,ui-monospace,monospace)">done · diff vs spec</text></g><g class="dg-node" data-id="correct" data-status="todo"><title>qsdlc-correct (to do)</title><rect x="880.5" y="585.5" width="171.7" height="47" style="fill:var(--surface);stroke:var(--muted);stroke-width:1.25;stroke-dasharray:4 3;rx:var(--radius,2px)"/><circle cx="900.5199999999999" cy="609" r="5" style="fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5"/><text x="977.4" y="606.5" text-anchor="middle" style="fill:var(--ink);font:600 13px var(--font-sans,ui-sans-serif,system-ui,sans-serif)">qsdlc-correct</text><text x="977.4" y="620.5" text-anchor="middle" style="fill:var(--muted);font:500 10.5px var(--font-mono,ui-monospace,monospace)">to do · bounded fix</text></g><g class="dg-node" data-id="verify" data-status="done"><title>qsdlc-verify (done)</title><rect x="1253.8" y="724.5" width="179.4" height="47" rx="23.5" style="fill:var(--surface);stroke:var(--ok);stroke-width:1.25"/><path d="M1268.79 748l3.5 3.5 6.5-7" style="fill:none;stroke:var(--ok);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"/><text x="1354.5" y="745.5" text-anchor="middle" style="fill:var(--ink);font:600 13px var(--font-sans,ui-sans-serif,system-ui,sans-serif)">qsdlc-verify</text><text x="1354.5" y="759.5" text-anchor="middle" style="fill:var(--muted);font:500 10.5px var(--font-mono,ui-monospace,monospace)">done · V1-V12 pass</text></g><g class="dg-node" data-id="sweep" data-status="done"><title>qsdlc-sweep (done)</title><rect x="1251.3" y="863.5" width="184.3" height="47" rx="10" style="fill:var(--surface);stroke:var(--ok);stroke-width:1.25"/><path d="M1266.34 887l3.5 3.5 6.5-7" style="fill:none;stroke:var(--ok);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"/><text x="1354.5" y="884.5" text-anchor="middle" style="fill:var(--ink);font:600 13px var(--font-sans,ui-sans-serif,system-ui,sans-serif)">qsdlc-sweep</text><text x="1354.5" y="898.5" text-anchor="middle" style="fill:var(--muted);font:500 10.5px var(--font-mono,ui-monospace,monospace)">done · watermark + pr</text></g><g class="dg-label"><rect x="205.3" y="84" width="60.8" height="18" style="fill:var(--bg);opacity:.92"/><text x="235.7" y="97" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">schedule</text></g><g class="dg-label"><rect x="323.2" y="84" width="60.8" height="18" style="fill:var(--bg);opacity:.92"/><text x="353.5" y="97" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">findings</text></g><g class="dg-label"><rect x="827.3" y="266.3" width="42.5" height="18" style="fill:var(--bg);opacity:.92"/><text x="848.5" y="279.3" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">track</text></g><g class="dg-label"><rect x="874" y="391.5" width="66.9" height="18" style="fill:var(--bg);opacity:.92"/><text x="907.4" y="404.5" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">pre-check</text></g><g class="dg-label"><rect x="712.5" y="408.3" width="36.4" height="18" style="fill:var(--bg);opacity:.92"/><text x="730.7" y="421.3" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">diff</text></g><g class="dg-label"><rect x="830.3" y="518.1" width="36.4" height="18" style="fill:var(--bg);opacity:.92"/><text x="848.5" y="531.1" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">gaps</text></g><g class="dg-label"><rect x="1510.8" y="651" width="42.5" height="18" style="fill:var(--bg);opacity:.92"/><text x="1532.1" y="664" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">clean</text></g><g class="dg-label"><rect x="1631.7" y="657.1" width="36.4" height="18" style="fill:var(--bg);opacity:.92"/><text x="1649.9" y="670.1" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">pass</text></g><g class="dg-label"><rect x="1127.6" y="638.8" width="54.7" height="18" style="fill:var(--bg);opacity:.92"/><text x="1154.9" y="651.8" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">patched</text></g><g class="dg-label"><rect x="1313.1" y="808.5" width="60.8" height="18" style="fill:var(--bg);opacity:.92"/><text x="1343.5" y="821.5" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-mono,ui-monospace,monospace)">evidence</text></g></svg></div><details class="kit-details"><summary>Node and edge list</summary><ul><li><strong>qsdlc-ritual</strong> — running, cron trigger → qsdlc-triage (schedule)</li><li><strong>qsdlc-audit</strong> — done, bugs &amp; drift → qsdlc-triage (findings)</li><li><strong>qsdlc-triage</strong> — done, 5 tracks → Spec + Build (track)</li><li><strong>Spec + Build</strong> — running, herdr panes → qsdlc-guard (pre-check), qsdlc-review (diff)</li><li><strong>qsdlc-guard</strong> — done, secrets/cmd → qsdlc-verify (clean)</li><li><strong>qsdlc-review</strong> — done, diff vs spec → qsdlc-correct (gaps), qsdlc-verify (pass)</li><li><strong>qsdlc-correct</strong> — to do, bounded fix → qsdlc-verify (patched)</li><li><strong>qsdlc-verify</strong> — done, V1-V12 pass → qsdlc-sweep (evidence)</li><li><strong>qsdlc-sweep</strong> — done, watermark + pr (end)</li></ul></details></figure>
+<!-- /qsdlc-present:render -->
+
+      </div>
+    </div>
+
+    <div class="card-grid" data-reveal>
+      <div class="cell-item">
+        <span class="cell-code">TRACK 01 // QUICK</span>
+        <h3>Tiny Fixes &amp; Hygiene</h3>
+        <p>Direct single-file patch with mandatory post-edit test/verify gate. Zero bureaucratic overhead.</p>
+      </div>
+      <div class="cell-item">
+        <span class="cell-code">TRACK 02 // BUGFIX</span>
+        <h3>Repro First, Patch Second</h3>
+        <p>Requires failing regression reproduction before edit and green test proof afterward via <code>qsdlc-verify</code>.</p>
+      </div>
+      <div class="cell-item">
+        <span class="cell-code">TRACK 03 // DELTA</span>
+        <h3>Bounded Spec Extension</h3>
+        <p>Lightweight delta spec + targeted plan + QA evals for well-understood incremental enhancements.</p>
+      </div>
+      <div class="cell-item">
+        <span class="cell-code">TRACK 04 // FULL</span>
+        <h3>Complete 5-Stage QSDLC</h3>
+        <p>Full Intent interview, competitive research, system spec, phased build, QA ledger, and PR docs.</p>
+      </div>
+      <div class="cell-item">
+        <span class="cell-code">TRACK 05 // DISCOVERY</span>
+        <h3>Autonomous Exploration</h3>
+        <p>Runs <code>qsdlc-audit</code> + external product benchmarking, emits reviewed ticket proposals without premature commits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SYS.04 // HIGH-TRUST VERIFICATION & ZERO-TRUST GATES -->
+  <section id="sys-04" class="band" aria-labelledby="h-sys-04">
+    <div class="band-head" data-reveal>
+      <div class="coord-row">
+        <span class="coord">SYS.04 // HIGH-TRUST ENGINEERING GATES</span>
+        <span class="coord-meta">303 SELF-TESTS · 0 FAILURES OBSERVED</span>
+      </div>
+      <h2 id="h-sys-04">Hard Verification Backed by Code, Never Blind Agent Self-Reporting</h2>
+      <p class="lede">
+        Every high-trust factory depends on deterministic checks that cannot be hallucinated away: regex secret scanning, destructive-shell blocking, structural JSON/Markdown validation, adversarial diff review, and terminal enum hygiene.
+      </p>
+    </div>
+
+    <div class="two-col" data-reveal>
+      <div class="stage-card">
+        <div class="canvas-head">
+          <span class="canvas-title">Live Motion Engine // Engines.expand (Layered Gate Reach)</span>
+          <span class="coord-meta">PURE TIME DRAW-AT</span>
+        </div>
+        <div class="canvas-box">
+          <canvas id="canvas-expand" width="600" height="360" role="img" aria-label="Expanding concentric containment rings from guard core through lint, review, verify, and sweep layers."></canvas>
+          <noscript><p class="note-line">JavaScript disabled: 4 concentric containment layers protect the codebase (guard -> V1-V12 lint -> adversarial review -> monotonic sweep).</p></noscript>
+        </div>
+        <div class="canvas-legend">
+          <span>Inner core: guard-check -> V1-V12 lint -> review -> sweep</span>
+          <span>Radius = containment depth</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <script data-mounted="1" type="application/json" data-chart="bar">
+{
+  "title": "Observed automated self-test assertions by package (303 total)",
+  "desc": "Horizontal bar chart of automated Node test suite assertions verified passing across all seven QSDLC v2 test scripts.",
+  "source": "README.md",
+  "unit": "tests",
+  "sort": "desc",
+  "data": [
+    { "label": "qsdlc-present (run_tests)", "value": 103, "tone": "hi" },
+    { "label": "qsdlc-guard (--self-test)", "value": 76, "tone": "ok" },
+    { "label": "_shared (run_tests)", "value": 49, "tone": "alt" },
+    { "label": "qsdlc-herdr (run_tests)", "value": 37, "tone": "hi" },
+    { "label": "qsdlc-sweep (--self-test)", "value": 26, "tone": "ok" },
+    { "label": "qsdlc-archify (run_tests)", "value": 6, "tone": "alt" },
+    { "label": "qsdlc-graphify (run_tests)", "value": 6, "tone": "alt" }
+  ]
+}
+        </script>
+<!-- qsdlc-present:render -->
+<figure class="kit-chart" data-chart="bar" data-source="README.md"><figcaption class="kit-cap"><span class="kit-title">Observed automated self-test assertions by package (303 total)</span></figcaption><div class="kit-plot"><svg viewBox="0 0 480 242" role="img" aria-labelledby="kcj1swsa-t kcj1swsa-d" style="max-width:672px;min-width:min(100%,400px)"><title id="kcj1swsa-t">Observed automated self-test assertions by package (303 total)</title><desc id="kcj1swsa-d">Horizontal bar chart of automated Node test suite assertions verified passing across all seven QSDLC v2 test scripts.</desc><line x1="168" y1="4" x2="168" y2="216" style="stroke:var(--line);stroke-width:1"/><text x="168" y="230" text-anchor="start" style="fill:var(--muted);font:400 11px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">0 tests</text><line x1="230" y1="4" x2="230" y2="216" style="stroke:var(--line);stroke-width:1"/><text x="230" y="230" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">50 tests</text><line x1="292" y1="4" x2="292" y2="216" style="stroke:var(--line);stroke-width:1"/><text x="292" y="230" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">100 tests</text><line x1="354" y1="4" x2="354" y2="216" style="stroke:var(--line);stroke-width:1"/><text x="354" y="230" text-anchor="middle" style="fill:var(--muted);font:400 11px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">150 tests</text><line x1="416" y1="4" x2="416" y2="216" style="stroke:var(--line);stroke-width:1"/><text x="416" y="230" text-anchor="end" style="fill:var(--muted);font:400 11px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">200 tests</text><text x="160" y="25" text-anchor="end" style="fill:var(--ink);font:400 12px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">qsdlc-present (run_tests)</text><text x="301.7" y="25" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums">103 tests</text><text x="160" y="55" text-anchor="end" style="fill:var(--ink);font:400 12px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">qsdlc-guard (--self-test)</text><text x="268.2" y="55" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums">76 tests</text><text x="160" y="85" text-anchor="end" style="fill:var(--ink);font:400 12px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">_shared (run_tests)</text><text x="234.8" y="85" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums">49 tests</text><text x="160" y="115" text-anchor="end" style="fill:var(--ink);font:400 12px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">qsdlc-herdr (run_tests)</text><text x="219.9" y="115" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums">37 tests</text><text x="160" y="145" text-anchor="end" style="fill:var(--ink);font:400 12px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">qsdlc-sweep (--self-test)</text><text x="206.2" y="145" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums">26 tests</text><text x="160" y="175" text-anchor="end" style="fill:var(--ink);font:400 12px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">qsdlc-archify (run_tests)</text><text x="181.4" y="175" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums">6 tests</text><text x="160" y="205" text-anchor="end" style="fill:var(--ink);font:400 12px var(--font-sans,ui-sans-serif,system-ui,sans-serif);font-variant-numeric:tabular-nums">qsdlc-graphify (run_tests)</text><text x="181.4" y="205" text-anchor="start" style="fill:var(--ink);font:600 11.5px var(--font-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums">6 tests</text><g data-grow data-axis="x"><rect x="168" y="12" width="127.7" height="18" style="fill:var(--hi)" data-i="0"/><rect x="168" y="42" width="94.2" height="18" style="fill:var(--ok)" data-i="1"/><rect x="168" y="72" width="60.8" height="18" style="fill:var(--alt)" data-i="2"/><rect x="168" y="102" width="45.9" height="18" style="fill:var(--hi)" data-i="3"/><rect x="168" y="132" width="32.2" height="18" style="fill:var(--ok)" data-i="4"/><rect x="168" y="162" width="7.4" height="18" style="fill:var(--alt)" data-i="5"/><rect x="168" y="192" width="7.4" height="18" style="fill:var(--alt)" data-i="6"/></g></svg></div><p class="kit-src">Source: README.md</p><details class="kit-details"><summary>Data table</summary><div class="table-wrap" tabindex="0"><table><caption class="sr">Observed automated self-test assertions by package (303 total)</caption><thead><tr><th scope="col">Item</th><th scope="col" class="num">Value</th></tr></thead><tbody><tr><th scope="row">qsdlc-present (run_tests)</th><td class="num">103 tests</td></tr><tr><th scope="row">qsdlc-guard (--self-test)</th><td class="num">76 tests</td></tr><tr><th scope="row">_shared (run_tests)</th><td class="num">49 tests</td></tr><tr><th scope="row">qsdlc-herdr (run_tests)</th><td class="num">37 tests</td></tr><tr><th scope="row">qsdlc-sweep (--self-test)</th><td class="num">26 tests</td></tr><tr><th scope="row">qsdlc-archify (run_tests)</th><td class="num">6 tests</td></tr><tr><th scope="row">qsdlc-graphify (run_tests)</th><td class="num">6 tests</td></tr></tbody></table></div></details></figure>
+<!-- /qsdlc-present:render -->
+
+      </div>
+    </div>
+
+    <div class="card" data-reveal>
+      <span class="eyebrow">Deterministic Enforcement Matrix</span>
+      <div class="table-wrap" tabindex="0">
+        <table>
+          <caption class="sr">QSDLC v2 verification modules, rule scopes, and exit semantics</caption>
+          <thead>
+            <tr>
+              <th scope="col">Module</th>
+              <th scope="col">Scope</th>
+              <th scope="col">Enforcement Mechanism</th>
+              <th scope="col" class="num">Verified Tests</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>qsdlc-lint.mjs</code></th>
+              <td>V1-V12 stage contracts</td>
+              <td>Rejects missing Intent, unlinked specs, skipped eval tables, placeholder evidence, invalid terminal statuses (allows <code>graphify-out/**</code> + <code>.archify/**</code>)</td>
+              <td class="num">49 (_shared)</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>guard-check.mjs</code></th>
+              <td>Secrets &amp; dangerous shell</td>
+              <td>Blocks committed API keys, force pushes, unguarded recursive deletes, and out-of-policy file writes</td>
+              <td class="num">76</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>qsdlc-review</code> + <code>correct</code></th>
+              <td>Independent adversarial audit</td>
+              <td>Fresh read-only critic inspects diff against spec before <code>qsdlc-correct</code> applies bounded fixes</td>
+              <td class="num">Tracked in V-gates</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>sweep-state.mjs</code></th>
+              <td>Monotonic factory state</td>
+              <td>Commits cursor advance only when run ends in valid terminal enum (<code>done</code>, <code>needs-review</code>, <code>blocked</code>)</td>
+              <td class="num">26</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>lint.mjs</code> + <code>shoot.mjs</code></th>
+              <td>HTML artifact gates</td>
+              <td>Checks L01-L16 offline/brand/contrast/a11y rules + Playwright desktop/mobile/no-JS renders</td>
+              <td class="num">103 (present)</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>qsdlc-herdr</code> helpers</th>
+              <td>Multi-pane relay tooling</td>
+              <td>Validates prompt framing, safe pane dispatch, session state checks, and worktree isolation rules</td>
+              <td class="num">37</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>archify</code> + <code>graphify</code> bridges</th>
+              <td>Diagram IR &amp; AST graph safety</td>
+              <td>Enforces V1-safe artifact paths, repo containment checks, and argv-safe <code>query</code> / <code>affected</code> wrappers</td>
+              <td class="num">12 (6 + 6)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- SYS.05 // CREATIVE MOTION ENGINE & HERDR RELAY SYSTEM -->
+  <section id="sys-05" class="band" aria-labelledby="h-sys-05">
+    <div class="band-head" data-reveal>
+      <div class="coord-row">
+        <span class="coord">SYS.05 // PRESENTATION CRAFT + HERDR ORCHESTRATION</span>
+        <span class="coord-meta">57 MATRIX CARDS · 7 BUILD LANES ORCHESTRATED LIVE</span>
+      </div>
+      <h2 id="h-sys-05">Creative Inspiration Bound Strictly to Brand + Persistent Herdr Relay Lanes</h2>
+      <p class="lede">
+        Two flagship capabilities elevate how QSDLC builds and explains work: <code>qsdlc-present</code> merges randomized design-matrix scouting with strict product brand binding, while <code>qsdlc-herdr</code> coordinates multi-agent terminal panes cleanly via file staging and event checks.
+      </p>
+    </div>
+
+    <div class="stage-card" data-reveal>
+      <div class="canvas-head">
+        <span class="canvas-title">Live Motion Engine // Engines.streams (Multi-Pane Relay Cadence)</span>
+        <span class="coord-meta">SPEED = EXECUTION CADENCE</span>
+      </div>
+      <div class="canvas-box">
+        <canvas id="canvas-streams" width="1160" height="230" role="img" aria-label="Four horizontal streaming lanes showing staggered execution speeds across lint checks, research discovery, Herdr agent build panes, and Playwright visual verification."></canvas>
+        <noscript><p class="note-line">JavaScript disabled: four parallel execution cadences — fast static checks, mid-speed research &amp; build lanes, deep visual Playwright verification.</p></noscript>
+      </div>
+      <div class="canvas-legend">
+        <span>Lane 1: Static lint (ms) · Lane 2: Research + Matrix · Lane 3: Herdr Build Panes · Lane 4: Browser Shoot + Audit</span>
+        <span>Tested live in Herdr workspace w3 (7 panes, 3 tabs)</span>
+      </div>
+    </div>
+
+    <div class="two-col" data-reveal>
+      <article class="card">
+        <span class="eyebrow">Pillar 01 // qsdlc-present + html-motion</span>
+        <h3>Six-Stage Craft Pipeline</h3>
+        <ul class="cmp-list">
+          <li>
+            <span class="cmp-key">01 Inspect &amp; Bind (<code>brand_probe.mjs</code>)</span>
+            <span class="cmp-val">Extracts tokens from design standards, CSS, or Tailwind into <code>brand-bind.json</code> with Tier A-E confidence scoring and zero contrast misses.</span>
+          </li>
+          <li>
+            <span class="cmp-key">02 Creative Roll (<code>roll.mjs</code>)</span>
+            <span class="cmp-val">Rolls non-repeating combinations across 57 matrix cards (15 archetypes, 12 BI encodings, 11 motion devices, 8 finishes, 11 signatures) + live web inspiration scouting.</span>
+          </li>
+          <li>
+            <span class="cmp-key">03 Purposeful Motion (9 Engines + Kit)</span>
+            <span class="cmp-val">Inlines 2D/GPU motion engines (<code>streams</code>, <code>graph</code>, <code>expand</code>, <code>pullback</code>, <code>split</code>, <code>transform</code>, <code>morph</code>, <code>shader</code>, <code>terrain</code>), 8 BI chart types, and offline <code>Diagram.layout</code> SVG DAGs.</span>
+          </li>
+          <li>
+            <span class="cmp-key">04 Dual Gate (<code>lint.mjs</code> + <code>shoot.mjs</code>)</span>
+            <span class="cmp-val">Enforces L01-L16 offline/slop/contrast gates and Playwright multi-viewport screenshots before the artifact is marked done.</span>
+          </li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <span class="eyebrow">Pillar 02 // qsdlc-herdr + Official Herdr CLI</span>
+        <h3>Doctored AI Agent Relay Architecture</h3>
+        <ul class="cmp-list">
+          <li>
+            <span class="cmp-key">Role-Isolated Tabs &amp; Worktrees</span>
+            <span class="cmp-val">Organizes parallel Claude/Codex/Gemini workers across dedicated tabs (<code>research</code>, <code>build</code>, <code>qa-verify</code>) with optional isolated worktree scopes.</span>
+          </li>
+          <li>
+            <span class="cmp-key">File-Staged Prompts (No Inline Escaping Bugs)</span>
+            <span class="cmp-val">Stages dense briefs in workspace scratch files and dispatches short pointer commands with <code>--enter</code> to prevent PowerShell quoting failures.</span>
+          </li>
+          <li>
+            <span class="cmp-key">Event-Driven State Verification</span>
+            <span class="cmp-val">Probes pane <code>state.json</code> (<code>idle</code> / <code>needs-input</code> / <code>done</code>) and <code>read-pane</code> output directly — never wasting turns on blind sleep loops.</span>
+          </li>
+          <li>
+            <span class="cmp-key">Dogfooded During This Overhaul</span>
+            <span class="cmp-val">Workspace <code>w3</code> (<code>qsdlc-overhaul</code>) orchestrated 7 panes in parallel to research pstack/potetos, draft new factory skills, build test suites, and run QA.</span>
+          </li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="two-col" data-reveal>
+      <article class="card">
+        <span class="eyebrow">Companion Tool 01 // qsdlc-archify (tt-a1i/archify)</span>
+        <h3>Validated 10-Mode Technical Diagrams</h3>
+        <ul class="cmp-list">
+          <li>
+            <span class="cmp-key">Beyond Simple Flowcharts</span>
+            <span class="cmp-val">Upgrades <code>Diagram.layout</code> when stages need schema-validated <code>sequence</code>, <code>erd</code>, <code>class</code>, <code>dataflow</code>, <code>lifecycle</code>, <code>tree</code>, <code>timeline</code>, <code>waterfall</code>, or standalone explainer artifacts.</span>
+          </li>
+          <li>
+            <span class="cmp-key">V1 / V9 Output Hygiene (<code>archify-bridge.mjs</code>)</span>
+            <span class="cmp-val">Targets primary stage slots via <code>--stage design|build</code> or nests companion visuals under <code>.craft/archify/</code> with offline <code>lint.mjs</code> verification.</span>
+          </li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <span class="eyebrow">Companion Tool 02 // qsdlc-graphify (Graphify-Labs/graphify)</span>
+        <h3>Deterministic AST &amp; Multimodal Knowledge Graph</h3>
+        <ul class="cmp-list">
+          <li>
+            <span class="cmp-key">Graph-First Grounding Across Stages</span>
+            <span class="cmp-val">Supplies <code>query</code>, <code>path</code>, and reverse-impact <code>affected</code> checks for <code>qsdlc-triage</code> blast radius, <code>qsdlc-design</code> research questions, <code>qsdlc-herdr</code> disjoint lane checks, and <code>debt-sweep</code>.</span>
+          </li>
+          <li>
+            <span class="cmp-key">Truth Hierarchy &amp; Zero-LLM Incremental Updates</span>
+            <span class="cmp-val"><code>EXTRACTED</code> AST edges narrow scope rapidly before live <code>file:line</code> verification, with incremental <code>graphify update</code> and V9 lint compatibility.</span>
+          </li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- SYS.06 // MOTION LEDGER & ARCHITECTURAL PROVENANCE -->
+  <section id="sys-06" class="band" aria-labelledby="h-sys-06">
+    <div class="band-head" data-reveal>
+      <div class="coord-row">
+        <span class="coord">SYS.06 // MOTION CONTRACT &amp; PROVENANCE LEDGER</span>
+        <span class="coord-meta">HTML-MOTION GATE DISCLOSURE</span>
+      </div>
+      <h2 id="h-sys-06">Every Moving Element Maps to a Verifiable Fact</h2>
+      <p class="lede">
+        Per <code>html-motion</code>'s One Rule, every animation on this page discloses what state changes when the data changes — and falls back cleanly under reduced motion, <code>?t=0..1</code>, <code>?freeze=1</code>, or disabled JavaScript.
+      </p>
+    </div>
+
+    <div class="card" data-reveal>
+      <div class="table-wrap" tabindex="0">
+        <table>
+          <caption class="sr">Fact-to-channel mapping for every motion engine and interactive widget in this presentation</caption>
+          <thead>
+            <tr>
+              <th scope="col">Section &amp; Engine</th>
+              <th scope="col">Fact Shown</th>
+              <th scope="col">Motion Channel</th>
+              <th scope="col">Reduced-Motion / No-JS Fallback</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">SYS.01 // <code>Engines.graph</code></th>
+              <td>QSDLC skill &amp; relay hop topology across modes</td>
+              <td>Traveler speed, link emphasis &amp; hub radius</td>
+              <td>Static settled network frame + inline caption summary</td>
+            </tr>
+            <tr>
+              <th scope="row">SYS.02 // <code>Before-After Hinge</code></th>
+              <td>Structural deltas from baseline commit <code>675c445</code> to v2</td>
+              <td>Column focus highlight + delta spine emphasis</td>
+              <td>Full side-by-side / stacked columns visible immediately</td>
+            </tr>
+            <tr>
+              <th scope="row">SYS.03 // <code>Engines.split</code></th>
+              <td>Inbound queue split into fast verify vs full spec</td>
+              <td>Particle density &amp; speed between top/bottom forks</td>
+              <td>Static settled fork frame + illustrative preset label</td>
+            </tr>
+            <tr>
+              <th scope="row">SYS.04 // <code>Engines.expand</code></th>
+              <td>Concentric enforcement reach from guard to sweep</td>
+              <td>Pure <code>drawAt(t)</code> radial expansion rings</td>
+              <td>Complete full-radius final frame painted immediately</td>
+            </tr>
+            <tr>
+              <th scope="row">SYS.05 // <code>Engines.streams</code></th>
+              <td>Parallel speed variance across check/research/build/verify</td>
+              <td>Distinct particle velocity ranges per horizontal lane</td>
+              <td>Complete settled stream lines across 4 lanes</td>
+            </tr>
+            <tr>
+              <th scope="row">SYS.02-04 // <code>Kit.chart</code> + <code>Diagram</code></th>
+              <td>Observed v1/v2 metrics, 303 tests, and Factory DAG</td>
+              <td>Viewport-triggered draw + <code>t=0..1</code> scrub support</td>
+              <td>Pre-rendered static SVG + accessible <code>&lt;details&gt;</code> data tables</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="provenance" data-reveal>
+      <div class="coord-row">
+        <span class="coord">PROVENANCE &amp; VERIFICATION RECORD</span>
+        <span class="coord-meta">OFFLINE SINGLE-FILE ARTIFACT · ZERO EXTERNAL RUNTIME DEPS</span>
+      </div>
+      <div class="stat-row">
+        <span>Brand source: HTML Design Standard.md (Tier A, 0 contrast failures)</span>
+        <span>Inspiration roll: seed 3705826849 (compare-split + before-after-hinge)</span>
+        <span>Verified counts: 24 skills · 14 templates · 303 self-tests across 7 suites</span>
+      </div>
+      <p class="note-line">
+        All repository counts trace to inspected repo files (<code>README.md</code>, <code>skills/_shared/conventions.md</code>, git baseline <code>675c445</code>, and observed self-test runs). Split-queue routing percentages in SYS.03 are marked as <strong>illustrative scenarios</strong>.
+      </p>
+    </footer>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+  if (window.Kit) window.Kit.init();
+
+  var E = window.Engines;
+  var Kit = window.Kit;
+  var env = Kit && Kit.env ? Kit.env() : { t: null, freeze: false, reduce: false };
+
+  function drive(engine, dur) {
+    if (!engine) return null;
+    if (env.t != null) {
+      engine.drawAt(Math.max(0, Math.min(1, env.t)) * dur);
+    } else if (env.freeze || env.reduce) {
+      engine.drawAt(dur);
+    } else {
+      engine.start();
+    }
+    return engine;
+  }
+
+  /* ---- 1. SYS.01 Control-plane relay network (Engines.graph) ---- */
+  var graphEngine = null;
+  var graphCanvas = document.getElementById('canvas-graph');
+  if (E && E.graph && graphCanvas) {
+    var nodes = [
+      { x: 90,  y: 105, r: 8,  c: '--alt' },
+      { x: 90,  y: 210, r: 8,  c: '--alt' },
+      { x: 90,  y: 315, r: 8,  c: '--alt' },
+      { x: 245, y: 210, r: 12, c: '--hi' },
+      { x: 390, y: 118, r: 10, c: '--hi' },
+      { x: 390, y: 302, r: 12, c: '--hi' },
+      { x: 530, y: 95,  r: 8,  c: '--ink' },
+      { x: 530, y: 210, r: 10, c: '--ok' },
+      { x: 530, y: 325, r: 8,  c: '--ok' },
+      { x: 675, y: 150, r: 10, c: '--ok' },
+      { x: 675, y: 270, r: 10, c: '--alt' }
+    ];
+    var links = [
+      [0, 3], [1, 3], [2, 3],
+      [3, 4], [3, 5],
+      [4, 6], [4, 7],
+      [5, 7], [5, 8],
+      [6, 9], [7, 9], [7, 10], [8, 10]
+    ];
+    graphEngine = drive(E.graph(graphCanvas, {
+      W: 760,
+      H: 420,
+      nodes: nodes,
+      links: links,
+      travelers: 26,
+      speed: 95,
+      colors: ['--hi', '--ok', '--alt'],
+      seed: 11,
+      bg: false,
+      css: false
+    }), 6);
+
+    var modeCap = document.getElementById('graph-mode-caption');
+    document.querySelectorAll('[data-graph-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('[data-graph-mode]').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+        btn.setAttribute('aria-pressed', 'true');
+        var m = btn.getAttribute('data-graph-mode');
+        if (m === 'interactive') {
+          graphEngine.set({ speed: 70, travelers: 14, colors: ['--hi', '--ok'] });
+          if (modeCap) modeCap.textContent = 'Interactive track lens: slower, human-aligned relay hops through Intent, Feature Research, Spec, Build, and Eval.';
+        } else if (m === 'factory') {
+          graphEngine.set({ speed: 145, travelers: 28, colors: ['--alt', '--ok', '--hi'] });
+          if (modeCap) modeCap.textContent = 'Scheduled factory lens: accelerated intake triage, Herdr build panes, guard checks, and sweep watermark updates.';
+        } else {
+          graphEngine.set({ speed: 95, travelers: 20, colors: ['--hi', '--ok', '--alt'] });
+          if (modeCap) modeCap.textContent = 'Showing full topology: intake queues, triage, design/build specialists, adversarial review, deterministic verifiers, and sweep ledger.';
+        }
+        if (env.freeze || env.reduce || env.t != null) graphEngine.redraw();
+      });
+    });
+  }
+
+  /* ---- 2. SYS.02 Interactive Before-After Hinge ---- */
+  var hingeRange = document.getElementById('hinge-range');
+  var hingeV1 = document.getElementById('hinge-v1');
+  var hingeV2 = document.getElementById('hinge-v2');
+  var hingeReadout = document.getElementById('hinge-readout');
+  function setHinge(val) {
+    var v = Math.max(0, Math.min(100, Number(val)));
+    if (hingeRange && Number(hingeRange.value) !== v) hingeRange.value = String(v);
+    if (hingeV1 && hingeV2) {
+      hingeV1.classList.toggle('is-dim', v > 62);
+      hingeV1.classList.toggle('is-focus', v < 38);
+      hingeV2.classList.toggle('is-dim', v < 38);
+      hingeV2.classList.toggle('is-focus', v >= 38);
+    }
+    if (hingeReadout) {
+      hingeReadout.textContent = v < 38 ? ('HINGE ' + v + '% // SPOTLIGHT V1 BASELINE')
+        : v > 62 ? ('HINGE ' + v + '% // SPOTLIGHT V2 FACTORY')
+        : ('HINGE ' + v + '% // BALANCED COMPARISON');
+    }
+    document.querySelectorAll('[data-hinge-preset]').forEach(function (b) {
+      var p = Number(b.getAttribute('data-hinge-preset'));
+      b.setAttribute('aria-pressed', Math.abs(p - v) <= 5 ? 'true' : 'false');
+    });
+  }
+  if (hingeRange) {
+    hingeRange.addEventListener('input', function () { setHinge(hingeRange.value); });
+    document.querySelectorAll('[data-hinge-preset]').forEach(function (b) {
+      b.addEventListener('click', function () { setHinge(b.getAttribute('data-hinge-preset')); });
+    });
+  }
+
+  /* ---- 3. SYS.03 Work-stream split router (Engines.split) ---- */
+  var splitCanvas = document.getElementById('canvas-split');
+  var splitCap = document.getElementById('split-caption');
+  if (E && E.split && splitCanvas) {
+    var splitEngine = drive(E.split(splitCanvas, {
+      W: 1160,
+      H: 320,
+      ratio: 0.72,
+      count: 85,
+      speed: 145,
+      colors: ['--hi', '--ok', '--alt'],
+      labels: ['FAST PATH (QUICK / BUGFIX)', 'FULL ARCH (DELTA / FULL / DISCOVERY)'],
+      seed: 9,
+      bg: false,
+      css: false
+    }), 5);
+
+    document.querySelectorAll('[data-split-ratio]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('[data-split-ratio]').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+        btn.setAttribute('aria-pressed', 'true');
+        var ratio = parseFloat(btn.getAttribute('data-split-ratio'));
+        var note = btn.getAttribute('data-split-note');
+        splitEngine.set({ ratio: ratio });
+        if (splitCap && note) splitCap.textContent = note;
+        if (env.freeze || env.reduce || env.t != null) splitEngine.redraw();
+      });
+    });
+  }
+
+  /* ---- 4. SYS.04 Enforcement reach (Engines.expand - pure drawAt) ---- */
+  var expandCanvas = document.getElementById('canvas-expand');
+  if (E && E.expand && expandCanvas) {
+    drive(E.expand(expandCanvas, {
+      W: 600,
+      H: 360,
+      dur: 4.5,
+      loop: false,
+      rings: 4,
+      points: 140,
+      maxR: 0.44,
+      label: 'CORE GUARD',
+      colors: ['--ok', '--hi', '--alt'],
+      seed: 5,
+      css: false
+    }), 4.5);
+  }
+
+  /* ---- 5. SYS.05 Parallel lane streams (Engines.streams) ---- */
+  var streamsCanvas = document.getElementById('canvas-streams');
+  if (E && E.streams && streamsCanvas) {
+    drive(E.streams(streamsCanvas, {
+      W: 1160,
+      H: 230,
+      lanes: 4,
+      count: 96,
+      speed: [55, 220],
+      colors: ['--ok', '--alt', '--hi', '--hi'],
+      dir: 'x',
+      trail: 16,
+      size: 1.15,
+      seed: 7,
+      bg: false,
+      css: false
+    }), 5);
+  }
+})();
+</script>
+</body>
+</html>

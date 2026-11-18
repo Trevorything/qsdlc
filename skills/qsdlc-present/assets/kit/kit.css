@@ -1,0 +1,127 @@
+/* kit.css — token-driven utilities for QSDLC stage artifacts.
+ * Consumes page tokens only: --bg --surface --panel --line --ink --muted --hi --ok --alt --risk
+ * plus shape/type tokens --radius --border --font-display --font-sans --font-mono (all have fallbacks).
+ * No colour literals, no font names. Progressive enhancement: [data-reveal] is hidden ONLY once
+ * Kit.reveal() has put the `js` class on <html>; without JS everything is visible.
+ */
+
+/* ---- focus (keyboard) ---- */
+:where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--hi, currentColor);
+  outline-offset: 2px;
+}
+
+/* ---- type utilities ---- */
+.eyebrow {
+  font: 600 11px/1.3 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.numeral {
+  font-family: var(--font-display, ui-serif, serif);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+.numeral-xl { font-size: clamp(3rem, 9vw, 7rem); }
+.muted { color: var(--muted); }
+.sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---- layout utilities (gap, not margin) ---- */
+.rule { border: 0; border-top: var(--border, 1px) solid var(--line); margin: 0; }
+.stack { display: flex; flex-direction: column; gap: var(--gap, 1rem); }
+.cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap, .75rem); }
+.grid-auto { display: grid; gap: var(--gap, 1rem); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.panel {
+  background: var(--surface); border: var(--border, 1px) solid var(--line);
+  border-radius: var(--radius, 2px); padding: 1rem 1.25rem;
+}
+
+/* Wide content scrolls itself; the page never scrolls sideways. */
+.table-wrap { overflow-x: auto; max-width: 100%; }
+.table-wrap table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.table-wrap :is(th, td) {
+  text-align: left; padding: .4rem .75rem; vertical-align: top;
+  border-bottom: var(--border, 1px) solid var(--line);
+}
+.table-wrap th {
+  font: 600 11px/1.3 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+}
+.table-wrap td.num, .table-wrap th.num { text-align: right; }
+
+/* Scroll-snap is always proximity, never mandatory (a tall section must stay readable). */
+.snap-y { scroll-snap-type: y proximity; }
+.snap-y > * { scroll-snap-align: start; }
+
+/* ---- charts (Kit.chart.*) and diagrams (Diagram.*) ---- */
+.kit-chart, .kit-diagram { margin: 0; display: flex; flex-direction: column; gap: .5rem; }
+.kit-cap {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem;
+  font: 600 13px/1.35 var(--font-sans, ui-sans-serif, system-ui, sans-serif); color: var(--ink);
+}
+.kit-illustrative {
+  font: 600 10px/1.2 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: .14em; text-transform: uppercase; color: var(--alt);
+  border: var(--border, 1px) solid currentColor; border-radius: var(--radius, 2px); padding: .1rem .35rem;
+}
+.kit-plot { overflow-x: auto; max-width: 100%; }
+/* scroll containers take keyboard focus (tabindex="0") so wide tables and diagrams can be scrolled without a mouse */
+.table-wrap:focus-visible, .kit-plot:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+.kit-plot > svg { display: block; width: 100%; height: auto; margin-inline: 0; }
+.kit-src { margin: 0; font: 400 12px/1.4 var(--font-mono, ui-monospace, monospace); color: var(--muted); }
+.kit-details > summary {
+  cursor: pointer; width: fit-content;
+  font: 600 11px/1.3 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+}
+.kit-details[open] > summary { color: var(--ink); }
+.kit-details .table-wrap { margin-top: .5rem; }
+.kit-details ul { margin: .5rem 0 0; padding-left: 1.1rem; color: var(--muted); font-size: 13px; }
+.kit-fps {
+  position: fixed; right: 8px; bottom: 8px; z-index: 99; pointer-events: none;
+  font: 600 11px/1 var(--font-mono, ui-monospace, monospace);
+  background: var(--panel); color: var(--ink); border: var(--border, 1px) solid var(--line); padding: 4px 6px;
+}
+
+/* ---- reveal: hidden only after JS has opted in ---- */
+html.js [data-reveal] {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity .5s ease, transform .5s ease;
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+html.js [data-reveal].is-in { opacity: 1; transform: none; }
+
+/* ---- scroll-linked reveal where the browser supports animation-timeline (JS opt-in via html.js) ---- */
+@keyframes kit-scrub { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@supports (animation-timeline: view()) {
+  html.js [data-scrub] {
+    animation: kit-scrub linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 35%;
+  }
+}
+
+/* ---- reduced motion: every state is its final frame ---- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important;
+  }
+  [data-reveal], html.js [data-reveal] { opacity: 1 !important; transform: none !important; transition: none !important; }
+  html.js [data-scrub] { animation: none !important; opacity: 1; transform: none; }
+}
+
+/* ---- print: show everything, drop chrome ---- */
+@media print {
+  [data-reveal], html.js [data-reveal], html.js [data-scrub] { opacity: 1 !important; transform: none !important; animation: none !important; }
+  .kit-fps { display: none; }
+  .table-wrap, .kit-plot { overflow: visible; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

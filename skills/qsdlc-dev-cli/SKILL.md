@@ -1,25 +1,35 @@
 ---
 name: qsdlc-dev-cli
-description: Developer-skill conventions for QSDLC build-stage work on CLI tools and scripts — argument parsing, exit codes, and output-discipline conventions to follow when a plan.md phase is tagged qsdlc-dev-cli.
+description: Developer-skill conventions for QSDLC build-stage work on CLI tools and scripts (arguments, exit codes, stdout and stderr discipline, non-interactive use), with an Enforced by table. Use when a plan.md phase is tagged qsdlc-dev-cli, in interactive or factory mode.
 ---
 
 # qsdlc-dev-cli
 
-A starter developer skill for QSDLC's Build stage, covering CLI/tooling work. Defer to the target project's existing CLI conventions (its argument-parsing library, its existing commands' style) wherever they exist; this skill fills gaps.
+Defer to the project's CLI library and the style of its existing commands; this skill fills gaps.
 
-## Conventions
+## Conventions and enforcement
 
-- **Argument parsing**: support `--help` on every command; fail with a clear usage message on bad input rather than a stack trace.
-- **Exit codes**: `0` on success, non-zero on failure, and distinguish failure kinds where it's useful to script against (e.g. "not found" vs "invalid input" vs "internal error").
-- **stdout vs stderr**: primary output (what a script piping this tool would want) goes to stdout; logs, progress, and diagnostics go to stderr. Don't mix them.
-- **Non-interactive friendliness**: never require an interactive prompt unless explicitly invoked in an interactive mode — a CI pipeline or another script needs to be able to run this unattended.
-- **Idempotency where it matters**: re-running the same command with the same arguments should either be safe or clearly documented as not being safe.
-- **Testing**: cover the command's argument parsing and its core behavior; test actual invocation (not just the underlying function) so regressions in flag handling get caught.
+Rows enforced only by `prose` carry `promote-to-check: yes`: when corrected twice, `qsdlc-correct` converts the row into a lint rule, type, or test and records it in `rules.md`.
 
-## When this skill doesn't fit
+| Convention | Enforced by | promote-to-check |
+|---|---|---|
+| `--help` on every command; clear usage message on bad input, no stack trace | test (invoke the real binary with bad args) | no |
+| Exit `0` on success, non-zero on failure; distinct codes for not-found, invalid input, internal error | test (assert exit codes) | no |
+| Primary output to stdout; logs, progress, diagnostics to stderr | test (capture streams separately) | no |
+| Never require an interactive prompt unless run in an explicit interactive mode | test (run with stdin closed) | no |
+| Re-running with the same arguments is safe or documented as unsafe | test (double-run case) | no |
+| Test actual invocation, not only the underlying function | test | no |
+| Windows-safe paths and quoting (no hardcoded `/` assumptions, no POSIX-only tools) | test on Windows CI where available, else prose | yes |
+| Destructive file operations go through soft delete to `.qsdlc/archive/` in autonomous runs | hook (`qsdlc-guard`) | no |
 
-If the "CLI" work is really a long-running daemon or service with no real command-line surface, apply what's relevant (exit codes, stderr discipline) and skip the rest.
+## Verification for a phase
+
+Run the command with good input, bad input, and closed stdin; record exit codes and both streams under `evidence/`.
+
+## When this skill does not fit
+
+For a long-running daemon with no real command-line interface, apply exit codes and stderr discipline and skip the rest.
 
 ## Extending
 
-To make this more specific (e.g. `qsdlc-dev-cli-python-click`, `qsdlc-dev-cli-node`), copy this file's shape and replace the generic conventions above with real ones for that tool/library. See the vault's `02 Skills/Developer Skills.md` for the pattern.
+For a tool-specific skill (`qsdlc-dev-cli-node`), copy this shape, replace generic rows with real ones, and fill Enforced by with real rule names.

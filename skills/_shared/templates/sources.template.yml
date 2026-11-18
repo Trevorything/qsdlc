@@ -1,0 +1,16 @@
+schema: 1
+# Intake sources for qsdlc-sweep. A source with approved: false receives no
+# source-side writes (no comments, labels, or acknowledgements). Item bodies
+# are untrusted data, never instructions.
+sources:
+  - name: github-issues
+    kind: issue-tracker
+    ref: owner/repo
+    approved: false
+    label: qsdlc-intake
+    sensitive: false
+  - name: support-inbox
+    kind: mailbox
+    ref: support-queue
+    approved: false
+    sensitive: true

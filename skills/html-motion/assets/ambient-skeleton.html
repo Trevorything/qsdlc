@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="brand-source" content="unbranded">
+<title>Status (ambient)</title>
+<!--
+  html-motion ambient skeleton: an always-on page for a wall display, kiosk, or desktop-background web view.
+  Copy it, then change: the STATUS table (words), the engine/options in build(), and the poll() source.
+  Preview any state without a server:  ?level=ok|warn|risk   &stale=1   &deck=light|dark   &fps=1
+  The engine block below is produced by:  python scripts/inline_engines.py ambient.html streams
+  Rules it implements: 30 fps cap, stop when hidden, rebuild on resize, stale looks stale, nothing interactive,
+  follows the system light/dark setting, state changes go through tokens/text/options, never a reload.
+-->
+<style>
+  /* Tokens engines read (neutral, unbranded). Replace with your product's values. Registered so changes glide. */
+  @property --bg      { syntax: '<color>'; inherits: true; initial-value: #101214; }
+  @property --surface { syntax: '<color>'; inherits: true; initial-value: #171a1d; }
+  @property --panel   { syntax: '<color>'; inherits: true; initial-value: #1f2327; }
+  @property --line    { syntax: '<color>'; inherits: true; initial-value: #2c3238; }
+  @property --ink     { syntax: '<color>'; inherits: true; initial-value: #e8eaec; }
+  @property --muted   { syntax: '<color>'; inherits: true; initial-value: #9aa3ab; }
+  @property --hi      { syntax: '<color>'; inherits: true; initial-value: #3fb8af; }
+  @property --ok      { syntax: '<color>'; inherits: true; initial-value: #5bbf7a; }
+  @property --alt     { syntax: '<color>'; inherits: true; initial-value: #e0a458; }
+  @property --risk    { syntax: '<color>'; inherits: true; initial-value: #e5645a; }
+  :root {
+    --bg: #101214; --surface: #171a1d; --panel: #1f2327; --line: #2c3238; --ink: #e8eaec; --muted: #9aa3ab;
+    --hi: #3fb8af; --ok: #5bbf7a; --alt: #e0a458; --risk: #e5645a;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Liberation Mono", monospace;
+    transition: --bg 1.2s, --hi 1.2s, --ok 1.2s, --alt 1.2s, --risk 1.2s, --ink 1.2s, --muted 1.2s, --line 1.2s;
+  }
+  :root[data-deck="light"] {
+    --bg: #f6f5f2; --surface: #ffffff; --panel: #ecebe7; --line: #d5d3cd; --ink: #1c1f22; --muted: #5c646b;
+    --hi: #0f7d76; --ok: #2b7a47; --alt: #9a6a12; --risk: #b3372e;
+  }
+  /* State = which token the lead colour (--hi) points at. Stale = everything goes grey. */
+  :root[data-level="warn"] { --hi: var(--alt); }
+  :root[data-level="risk"] { --hi: var(--risk); }
+  :root[data-level="ok"]   { --hi: var(--ok); }
+  :root[data-stale="1"]    { --hi: var(--muted); --ok: var(--muted); --alt: var(--muted); --risk: var(--muted); }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); overflow: hidden; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: filter 1.2s, opacity 1.2s; }
+  [data-stale="1"] canvas { filter: saturate(0); opacity: .55; }
+  /* Few words, large, low contrast, clear of the menu bar, Dock and desktop icons. */
+  .status { position: fixed; left: 8vw; bottom: 14vh; padding: 14px 22px; background: color-mix(in srgb, var(--bg) 85%, transparent); pointer-events: none; user-select: none; }
+  .word { margin: 0; font-size: clamp(40px, 8vw, 120px); font-weight: 600; letter-spacing: -.02em; line-height: 1; color: var(--ink); opacity: .86; }
+  .sub { margin: 14px 0 0; font: clamp(12px, 1.4vw, 18px)/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  /* Nothing on this page is interactive, but anything you add (a pause button, a link) must show keyboard focus. */
+  :focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { :root { transition: none; } canvas { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<main class="status">
+  <h1 class="word" id="word">Healthy</h1>
+  <p class="sub" id="sub" role="status" aria-live="polite">Last update just now</p>
+</main>
+
+<!-- html-motion:start engines=streams -->
+<script>
+/* ---- _core.js ---- */
+/* html-motion core: shared runtime for every engine. Zero dependencies. Always inlined first.
+ *
+ * Contract (every engine):  const e = Engines.name(canvas, { W, H, ...options })
+ *                           -> { start, stop, redraw, drawAt, set, resize, destroy }
+ *   W, H     drawing space in CSS pixels (default: the canvas's client size). The backing store is W*res x H*res,
+ *            res = min(devicePixelRatio, 2) (governor may lower it). Inline size is set to W x H px unless css:false.
+ *   start()  runs the loop. Under prefers-reduced-motion it paints one COMPLETE final frame and does not loop.
+ *   stop()   cancels the loop (the last frame stays on the canvas).
+ *   redraw() repaints the current frame; call after a theme or token change.
+ *   drawAt(t) paints the frame for t seconds. Exact for "pure" engines; stateful engines replay a seeded
+ *            simulation from 0 in 1/30 s steps, so the same t gives the same frame.
+ *   set(obj) changes options live (engines read options every frame where noted in their header).
+ *   A draw function may return 'freeze' to end its own loop; the last frame stays.
+ *
+ * Common options: loop (pure engines restart after dur+hold), dur, hold (s, default .6), bg (true or token: paint
+ *   a background), dpr (cap, <= 2), quality (GPU resolution multiplier), css (false: page sizes the canvas), seed.
+ *
+ * Tokens. Engines read colours BY NAME from :root on every draw, so a CSS transition on a registered @property
+ * glides through the canvas with no restart. A page MUST define all ten (below). If one is missing the engine
+ * falls back to the neutral defaults in Engines.core.defaults so it still renders, but the colours will not be yours.
+ *   --bg --surface --panel --line --ink --muted --hi --ok --alt --risk
+ * <html data-deck="dark|light"> selects the theme engines blend for (glow add vs. normal). Absent: system theme.
+ *
+ * Globals:  Engines.maxFps (default 60)  cap for pages that run for hours, e.g. 30.
+ *           Engines.noGovernor (false)   set true if the page paces a GPU engine itself with drawAt(t).
+ * URL:      ?fps=1 frame-rate readout   ?gov=off disable the governor (for testing).
+ * Governor (GPU engines only): if ~45 consecutive frames average slower than 20 fps, halve resolution; if still
+ *   slow, freeze on the last frame. Without WebGL (or on compile/context loss) the canvas gets a still gradient
+ *   built from the tokens (data-fallback="still").
+ */
+(function () {
+  'use strict';
+  var G = window, E = G.Engines = G.Engines || {};
+  var Q = new URLSearchParams(location.search);
+  if (E.maxFps == null) E.maxFps = 60;
+  if (E.noGovernor == null) E.noGovernor = false;
+
+  var TOKENS = ['--bg', '--surface', '--panel', '--line', '--ink', '--muted', '--hi', '--ok', '--alt', '--risk'];
+  // Neutral, unbranded fallbacks only. Real pages define their own tokens (see qsdlc-present brand binding).
+  var DEFAULTS = {
+    dark:  { '--bg': '#101214', '--surface': '#171a1d', '--panel': '#1f2327', '--line': '#2c3238', '--ink': '#e8eaec',
+             '--muted': '#9aa3ab', '--hi': '#3fb8af', '--ok': '#5bbf7a', '--alt': '#e0a458', '--risk': '#e5645a' },
+    light: { '--bg': '#f6f5f2', '--surface': '#ffffff', '--panel': '#ecebe7', '--line': '#d5d3cd', '--ink': '#1c1f22',
+             '--muted': '#5c646b', '--hi': '#0f7d76', '--ok': '#2b7a47', '--alt': '#9a6a12', '--risk': '#b3372e' }
+  };
+  var core = E.core = { tokens: TOKENS, defaults: DEFAULTS, frames: 0 };
+
+  // ---- small math helpers -------------------------------------------------------------------------------
+  core.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+  core.lerp = function (a, b, k) { return a + (b - a) * k; };
+  core.smooth = function (a, b, x) { var k = core.clamp((x - a) / (b - a || 1), 0, 1); return k * k * (3 - 2 * k); };
+  core.ease = function (k) { k = core.clamp(k, 0, 1); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+  core.rng = function (s) { // mulberry32: deterministic, so drawAt(t) is repeatable
+    s = (s >>> 0) || 1;
+    return function () {
+      s = (s + 0x6D2B79F5) >>> 0; var t = s;
+      t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  };
+  core.theme = function () {
+    var d = document.documentElement.getAttribute('data-deck');
+    if (d === 'light' || d === 'dark') return d;
+    return G.matchMedia && G.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  };
+  core.reduced = function () { return !!(G.matchMedia && G.matchMedia('(prefers-reduced-motion: reduce)').matches); };
+
+  // ---- colour parsing (any CSS colour the canvas understands -> [r,g,b]) --------------------------------
+  var cc = document.createElement('canvas').getContext('2d'), memo = {};
+  function parse(v, fb) {
+    v = (v || '').trim();
+    if (!v) return fb;
+    if (memo[v]) return memo[v];
+    cc.fillStyle = '#010203'; cc.fillStyle = v;
+    var s = cc.fillStyle, out;
+    if (s === '#010203' && v.replace(/\s/g, '').toLowerCase() !== '#010203') return fb; // not a colour
+    if (s.charAt(0) === '#') out = [parseInt(s.substr(1, 2), 16), parseInt(s.substr(3, 2), 16), parseInt(s.substr(5, 2), 16)];
+    else { var m = s.match(/[\d.]+/g); out = [+m[0], +m[1], +m[2]]; }
+    return (memo[v] = out);
+  }
+  function Env(W, H) {
+    var cs = getComputedStyle(document.documentElement), th = core.theme(), d = DEFAULTS[th];
+    this.W = W; this.H = H; this.dark = th === 'dark'; this.c = {};
+    for (var i = 0; i < TOKENS.length; i++) this.c[TOKENS[i]] = parse(cs.getPropertyValue(TOKENS[i]), parse(d[TOKENS[i]]));
+  }
+  var P = Env.prototype;
+  P.arr = function (t) { // token name ('--hi' or 'hi') or any CSS colour -> [r,g,b] 0..255
+    if (this.c[t]) return this.c[t];
+    var n = t.charAt(0) === '-' ? t : '--' + t;
+    return this.c[n] || parse(t, this.c['--ink']);
+  };
+  P.f = function (t) { var c = this.arr(t); return [c[0] / 255, c[1] / 255, c[2] / 255]; }; // 0..1 for GL uniforms
+  P.rgb = function (t) { var c = this.arr(t); return 'rgb(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ')'; };
+  P.a = function (t, al) { var c = this.arr(t); return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + core.clamp(al, 0, 1) + ')'; };
+  P.mix = function (t1, t2, k, al) {
+    var a = this.arr(t1), b = this.arr(t2);
+    return 'rgba(' + Math.round(a[0] + (b[0] - a[0]) * k) + ',' + Math.round(a[1] + (b[1] - a[1]) * k) + ',' +
+      Math.round(a[2] + (b[2] - a[2]) * k) + ',' + (al == null ? 1 : core.clamp(al, 0, 1)) + ')';
+  };
+  P.glow = function () { return this.dark ? 'lighter' : 'source-over'; }; // additive glow on dark, plain on light
+  core.env = function (W, H) { return new Env(W, H); };
+
+  // ---- still fallback (no WebGL, shader compile error, lost context) -------------------------------------
+  core.still = function (canvas, e) {
+    canvas.style.background = 'radial-gradient(120% 90% at 30% 20%,' + e.a('--hi', .35) + ',transparent 60%),' +
+      'linear-gradient(' + e.rgb('--surface') + ',' + e.rgb('--bg') + ')';
+    canvas.setAttribute('data-fallback', 'still');
+  };
+
+  // ---- WebGL helpers --------------------------------------------------------------------------------------
+  core.gl = {
+    program: function (gl, vs, fs, attrs) { // attrs: attribute names, bound to locations 0,1,2...
+      function sh(type, src) {
+        var h = gl.createShader(type); gl.shaderSource(h, src); gl.compileShader(h);
+        if (!gl.getShaderParameter(h, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(h));
+        return h;
+      }
+      var p = gl.createProgram();
+      gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+      (attrs || []).forEach(function (n, i) { gl.bindAttribLocation(p, i, n); });
+      gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+      return p;
+    }
+  };
+
+  // ---- ?fps=1 readout (one shared element, counts paints across all engines) ------------------------------
+  var fpsEl = null;
+  function fpsInit() {
+    if (fpsEl || Q.get('fps') !== '1' || !document.body) return;
+    fpsEl = document.createElement('div'); fpsEl.setAttribute('data-hm-fps', '');
+    fpsEl.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99999;font:11px/1.2 ui-monospace,Consolas,monospace;' +
+      'padding:3px 6px;background:rgba(0,0,0,.7);color:#fff;pointer-events:none';
+    document.body.appendChild(fpsEl);
+    var n0 = 0, t0 = performance.now();
+    setInterval(function () {
+      var now = performance.now();
+      fpsEl.textContent = Math.round((core.frames - n0) * 1000 / (now - t0)) + ' fps';
+      n0 = core.frames; t0 = now;
+    }, 500);
+  }
+
+  // ---- the engine factory ----------------------------------------------------------------------------------
+  // spec: { pure, gpu, gl, dur, init(g,e,st), draw(g,e,st) -> 'freeze'|undefined, destroy() }
+  // `e` is the per-frame env: W H t dt p(progress, pure engines with dur) dark o(options) + colour helpers.
+  core.make = function (canvas, o, spec) {
+    o = o || {};
+    var self = { canvas: canvas, opts: o }, g = null, ok = false, inited = false, st = {};
+    var W = o.W || canvas.clientWidth || canvas.width || 300, H = o.H || canvas.clientHeight || canvas.height || 150;
+    var dprCap = Math.min(o.dpr || G.devicePixelRatio || 1, 2), scale = 1, res = 1, slow = 0, win = [];
+    var raf = 0, running = false, tNow = 0, lastTs = 0, lastPaint = 0, vis = true, io = null;
+
+    function dur() { return typeof spec.dur === 'function' ? spec.dur(o) : spec.dur; }
+    function hold() { return o.hold != null ? o.hold : .6; }
+    function size() {
+      res = core.clamp(dprCap * scale * (spec.gl ? (o.quality || 1) : 1), .25, 2);
+      canvas.width = Math.max(1, Math.round(W * res)); canvas.height = Math.max(1, Math.round(H * res));
+      if (o.css !== false) { canvas.style.width = W + 'px'; canvas.style.height = H + 'px'; }
+    }
+    function mk(t, dt) {
+      var e = new Env(W, H); e.t = t; e.dt = dt; e.res = res; e.o = o; e.canvas = canvas;
+      if (spec.dur) { var d = dur(); e.p = o.loop ? Math.min(1, (t % (d + hold())) / d) : Math.min(1, t / d); }
+      return e;
+    }
+    function ensure() {
+      if (inited) return; inited = true; fpsInit();
+      if (spec.gl) {
+        try { g = canvas.getContext('webgl', { antialias: false, alpha: true, premultipliedAlpha: true }) || canvas.getContext('experimental-webgl'); }
+        catch (x) { g = null; }
+        ok = !!g;
+        if (g) canvas.addEventListener('webglcontextlost', function (ev) { ev.preventDefault(); ok = false; stop(); core.still(canvas, mk(0, 0)); });
+      } else { g = canvas.getContext('2d'); ok = !!g; }
+      size();
+      if (ok) { try { if (spec.init) spec.init(g, mk(0, 0), st); } catch (x) { console.warn('html-motion: init failed, using still fallback.', x.message); ok = false; } }
+      if (!ok) core.still(canvas, mk(0, 0));
+    }
+    function paint(t, dt) {
+      ensure();
+      if (!ok) { core.still(canvas, mk(t, dt)); return 'still'; }
+      var e = mk(t, dt);
+      if (!spec.gl) {
+        g.setTransform(res, 0, 0, res, 0, 0); g.clearRect(0, 0, W, H);
+        if (o.bg) { g.fillStyle = e.rgb(o.bg === true ? '--bg' : o.bg); g.fillRect(0, 0, W, H); }
+      }
+      var r = spec.draw(g, e, st);
+      core.frames++;
+      if (spec.pure && spec.dur && !o.loop && t >= dur() + hold()) r = 'freeze';
+      return r;
+    }
+    function stop() { running = false; if (raf) cancelAnimationFrame(raf); raf = 0; }
+    function tick(ts) {
+      if (!running) return;
+      raf = requestAnimationFrame(tick);
+      if (document.hidden || !vis) { lastTs = 0; lastPaint = 0; return; }
+      var raw = lastTs ? ts - lastTs : 0; lastTs = ts;
+      if (spec.gpu && !E.noGovernor && Q.get('gov') !== 'off' && raw > 0 && raw < 250) {
+        win.push(raw);
+        if (win.length >= 45) {
+          var avg = win.reduce(function (a, b) { return a + b; }, 0) / win.length; win = [];
+          if (avg > 45) {
+            if (++slow === 1) { scale = .5; size(); console.info('html-motion governor: resolution halved'); }
+            else { console.info('html-motion governor: froze on last frame'); stop(); return; }
+          }
+        }
+      }
+      var min = 1000 / Math.max(1, E.maxFps);
+      if (lastPaint && ts - lastPaint < min - 1.5) return;
+      var dt = lastPaint ? Math.min((ts - lastPaint) / 1000, .1) : 0;
+      lastPaint = ts; tNow += dt;
+      if (paint(tNow, dt) === 'freeze') stop();
+    }
+    function settle() { // one complete final frame (reduced motion, or a still render)
+      if (spec.pure) self.drawAt(spec.dur ? dur() : (o.still != null ? o.still : 6));
+      else self.drawAt(o.warm != null ? o.warm : (spec.dur ? dur() + 2 : 4));
+    }
+
+    self.start = function () {
+      ensure();
+      if (running) return self;
+      if (core.reduced()) { settle(); return self; }
+      running = true; lastTs = 0; lastPaint = 0;
+      if (!io && 'IntersectionObserver' in G) { io = new IntersectionObserver(function (en) { vis = en[en.length - 1].isIntersecting; }); io.observe(canvas); }
+      raf = requestAnimationFrame(tick);
+      return self;
+    };
+    self.stop = function () { stop(); return self; };
+    self.redraw = function () { paint(tNow, 0); return self; };
+    self.drawAt = function (t) {
+      ensure(); tNow = t;
+      if (spec.pure || spec.gl || !ok) { paint(t, 0); return self; }
+      st = {}; if (spec.init) spec.init(g, mk(0, 0), st);
+      var n = Math.min(900, Math.ceil(t * 30));
+      if (n < 1) { paint(0, 0); return self; }
+      for (var i = 1; i <= n; i++) paint(i / 30, 1 / 30);
+      return self;
+    };
+    self.set = function (patch) { for (var k in patch) o[k] = patch[k]; return self; };
+    self.resize = function (w, h) { W = w; H = h; if (inited) { size(); self.redraw(); } return self; };
+    self.destroy = function () { stop(); if (io) io.disconnect(); if (spec.destroy) spec.destroy(st); };
+
+    var mq = G.matchMedia && G.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq && mq.addEventListener) mq.addEventListener('change', function () { if (mq.matches && running) { stop(); settle(); } });
+    return self;
+  };
+})();
+/* ---- streams.js ---- */
+/* html-motion engine: streams. Things moving at different rates (speed = rate). 2D, stateful (seeded).
+ * Engines.streams(canvas, { W, H, ...options })
+ * Options:
+ *   lanes 6          number of parallel lanes; lane i runs at a rate between speed[0] and speed[1]
+ *   count 90         particles in total, spread across lanes
+ *   speed [40,220]   px per second, slowest to fastest lane (live: speedScale multiplies it, set({speedScale:.3}))
+ *   colors ['--hi','--alt','--ok']   token names, one per lane group
+ *   dir 'x'|'y'      flow direction
+ *   trail 14         trail length at 100 px/s, in px
+ *   size 1           particle size multiplier (use 1.8 or more for wall displays)
+ *   seed 7  bg false
+ */
+(function () {
+  var core = Engines.core;
+  Engines.streams = function (canvas, o) {
+    o = o || {};
+    return core.make(canvas, o, {
+      pure: false,
+      init: function (g, e, s) {
+        var r = core.rng(o.seed || 7), n = o.count || 90, L = o.lanes || 6, sp = o.speed || [40, 220];
+        s.p = [];
+        for (var i = 0; i < n; i++) {
+          var lane = i % L;
+          s.p.push({ lane: lane, u: r(), v: core.lerp(sp[0], sp[1], L > 1 ? lane / (L - 1) : .5) * (.85 + r() * .3), z: 1 + r() * 1.6 });
+        }
+      },
+      draw: function (g, e, s) {
+        var L = o.lanes || 6, cols = o.colors || ['--hi', '--alt', '--ok'], y = o.dir === 'y', trail = o.trail || 14, sz = o.size || 1;
+        var len = y ? e.H : e.W, span = y ? e.W : e.H, k = o.speedScale == null ? 1 : o.speedScale;
+        var pos = function (lane) { return span * .12 + (span * .76) * (L > 1 ? lane / (L - 1) : .5); };
+        g.lineWidth = 1; g.strokeStyle = e.a('--line', .7);
+        for (var l = 0; l < L; l++) {
+          var q = pos(l); g.beginPath();
+          if (y) { g.moveTo(q, 0); g.lineTo(q, len); } else { g.moveTo(0, q); g.lineTo(len, q); }
+          g.stroke();
+        }
+        g.globalCompositeOperation = e.glow(); g.lineCap = 'round';
+        for (var i = 0; i < s.p.length; i++) {
+          var p = s.p[i]; p.u = (p.u + p.v * k * e.dt / len) % 1;
+          var a = p.u * len, b = pos(p.lane), tl = trail * (p.v * k / 100) + 2, col = cols[p.lane % cols.length];
+          g.strokeStyle = e.a(col, .55); g.lineWidth = p.z * sz;
+          g.beginPath();
+          if (y) { g.moveTo(b, a - tl); g.lineTo(b, a); } else { g.moveTo(a - tl, b); g.lineTo(a, b); }
+          g.stroke();
+          g.fillStyle = e.rgb(col); g.beginPath(); g.arc(y ? b : a, y ? a : b, p.z * .9 * sz, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+      }
+    });
+  };
+})();
+</script>
+<!-- html-motion:end -->
+<script>
+(function () {
+  'use strict';
+  var Q = new URLSearchParams(location.search), root = document.documentElement;
+
+  /* ---- configuration ---------------------------------------------------------------------------------- */
+  var STALE_MS = 5 * 60 * 1000;           // no update for this long => stale
+  var POLL_MS = 30 * 1000;                // poll interval
+  var ENDPOINT = null;                    // e.g. 'http://localhost:8765/status.json' -> { level: 'ok'|'warn'|'risk', at: <epoch ms> }
+                                          // fetch() from a file:// page is blocked; serve this page and the data from a local server.
+  var STATUS = {                          // level -> words, engine rate (the fact the motion shows)
+    ok:   { word: 'Healthy',  speed: 1.0 },
+    warn: { word: 'Degraded', speed: 0.55 },
+    risk: { word: 'At risk',  speed: 0.25 }
+  };
+  Engines.maxFps = 30;                    // hours-long page: cap the frame rate
+
+  /* ---- theme: follow the system, ?deck= overrides for preview ----------------------------------------- */
+  var mq = matchMedia('(prefers-color-scheme: light)');
+  function deck() { var d = Q.get('deck'); root.setAttribute('data-deck', d === 'light' || d === 'dark' ? d : (mq.matches ? 'light' : 'dark')); }
+  deck(); if (mq.addEventListener) mq.addEventListener('change', function () { deck(); if (eng) eng.redraw(); });
+
+  /* ---- state ------------------------------------------------------------------------------------------- */
+  var level = STATUS[Q.get('level')] ? Q.get('level') : 'ok';
+  var lastAt = Q.get('stale') === '1' ? Date.now() - STALE_MS - 1000 : Date.now();
+  var forcedStale = Q.get('stale') === '1';
+  var eng = null, cv = document.getElementById('bg'), word = document.getElementById('word'), sub = document.getElementById('sub');
+
+  function ago(ms) { var s = Math.max(0, Math.round(ms / 1000)); return s < 90 ? s + ' s' : s < 5400 ? Math.round(s / 60) + ' min' : Math.round(s / 3600) + ' h'; }
+  function render() { // text + tokens only: never a reload, never an engine restart
+    var stale = forcedStale || Date.now() - lastAt > STALE_MS, t = new Date(lastAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    root.setAttribute('data-level', level); root.setAttribute('data-stale', stale ? '1' : '0');
+    word.textContent = stale ? 'No recent data' : STATUS[level].word;
+    sub.textContent = (stale ? 'Stale. ' : '') + 'Last update ' + t + ' (' + ago(Date.now() - lastAt) + ' ago)';
+    if (eng) eng.set({ speedScale: stale ? 0.12 : STATUS[level].speed });
+  }
+
+  /* ---- engine: build once, rebuild on resize (the page may move between displays) --------------------- */
+  function build() {
+    if (eng) eng.destroy();
+    eng = Engines.streams(cv, { W: innerWidth, H: innerHeight, css: false, lanes: 7, count: 70, speed: [30, 170], colors: ['--hi'], size: 1.8, speedScale: STATUS[level].speed });
+    eng.start(); render();
+  }
+  var rz = 0; addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(build, 200); });
+  // Engines stop themselves while the tab/window is hidden (document.hidden) and resume with a continuous clock.
+
+  /* ---- live data (optional) --------------------------------------------------------------------------- */
+  function poll() {
+    if (!ENDPOINT) return;
+    fetch(ENDPOINT, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (STATUS[d.level]) level = d.level; lastAt = d.at || Date.now(); forcedStale = false; render();
+    }).catch(function () { /* keep the last state; it will go stale on its own */ });
+  }
+  build(); poll();
+  setInterval(poll, POLL_MS);
+  setInterval(render, 15000);             // keeps "x min ago" and the stale flip honest
+})();
+</script>
+</body>
+</html>

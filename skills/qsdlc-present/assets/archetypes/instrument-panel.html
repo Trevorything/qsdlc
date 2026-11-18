@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="brand-source" content="unbranded">
+<meta name="color-scheme" content="light dark">
+<title>[PLACEHOLDER] Test results — instrument panel</title>
+<!-- how this was made: archetype=instrument-panel (structure only; tokens come from brand-bind.json) -->
+<style id="tokens">
+/* unbranded placeholder — overwritten by brand-bind */
+:root{--bg:#f6f5f2;--surface:#fdfcfa;--panel:#ebe9e4;--line:#d4d1c9;--ink:#1d1c1a;--muted:#5c5a54;--hi:#0b6b6b;--ok:#2f6b2f;--alt:#8a5a00;--risk:#a8321f;
+--radius:2px;--border:1px;--font-display:ui-serif,serif;--font-sans:ui-sans-serif,system-ui,sans-serif;--font-mono:ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}}
+:root[data-theme="dark"]{--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}
+</style>
+<!-- qsdlc-present:start -->
+<!-- inline.mjs injects kit.css + kit.js (+ diagram.js / html-motion engines if rolled) here -->
+<!-- qsdlc-present:end -->
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);line-height:1.5}
+h1,h2{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+.panel-page{max-width:76rem;margin:0 auto;padding:1.5rem 16px 3rem;display:flex;flex-direction:column;gap:1.5rem}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:.75rem 2rem;border-bottom:var(--border) solid var(--line);padding-bottom:1rem}
+h1{font-size:clamp(1.6rem,4vw,2.4rem)}
+.verdict{margin:.25rem 0 0;font-size:1.1rem;max-width:60ch}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr));gap:1px;background:var(--line);border:var(--border) solid var(--line)}
+.kpi{background:var(--surface);padding:.9rem 1rem;display:flex;flex-direction:column;gap:.35rem}
+.kpi .numeral{font-size:2.4rem}
+.kpi small{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr));gap:1.5rem}
+.cell{background:var(--surface);border:var(--border) solid var(--line);border-radius:var(--radius);padding:1rem 1.1rem}
+h2{font-size:1.1rem;margin-bottom:.6rem}
+.delta{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;color:var(--muted);font-size:.9rem;margin:0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}[data-reveal]{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+<main class="panel-page">
+  <header>
+    <div>
+      <p class="eyebrow">[PLACEHOLDER] feature-slug · eval run</p>
+      <h1>[PLACEHOLDER] Test results</h1>
+      <p class="verdict">[PLACEHOLDER] Headline verdict sentence: N of M evals passed; the failures are listed below with evidence.</p>
+    </div>
+    <p class="eyebrow">Last updated <time datetime="2026-01-01T00:00:00Z">[PLACEHOLDER] timestamp</time></p>
+  </header>
+
+  <section class="kpis" aria-label="Key figures" data-reveal>
+    <div class="kpi"><span class="eyebrow">Passed</span><span class="numeral" data-count="0" data-source="placeholder">0</span><small>[PLACEHOLDER] source</small></div>
+    <div class="kpi"><span class="eyebrow">Failed</span><span class="numeral" data-count="0" data-source="placeholder">0</span><small>[PLACEHOLDER] source</small></div>
+    <div class="kpi"><span class="eyebrow">Skipped</span><span class="numeral" data-count="0" data-source="placeholder">0</span><small>[PLACEHOLDER] source</small></div>
+    <div class="kpi"><span class="eyebrow">p95 latency</span><span class="numeral" data-count="0" data-source="placeholder">0</span><small>[PLACEHOLDER] ms</small></div>
+  </section>
+
+  <section class="grid" aria-label="Charts" data-reveal>
+    <div class="cell"><h2>Pass / fail / skip</h2>
+      <script type="application/json" data-chart="stacked">{"title":"Results by run","illustrative":true,"series":[{"label":"Pass","tone":"ok"},{"label":"Fail","tone":"risk"},{"label":"Skip","tone":"muted"}],"data":[{"label":"Run 1","values":[10,2,1]},{"label":"Run 2","values":[12,1,0]}]}</script>
+      <noscript><p>Charts need JavaScript; the ledger table below holds the numbers.</p></noscript>
+    </div>
+    <div class="cell"><h2>Trend per metric</h2>
+      <script type="application/json" data-chart="spark">{"title":"Last six runs","illustrative":true,"series":[{"label":"Pass rate %","data":[80,82,85,84,90,92]},{"label":"p95 ms","data":[300,280,260,310,250,240]}]}</script>
+    </div>
+  </section>
+
+  <section class="cell" data-reveal>
+    <h2>Changed since last run</h2>
+    <p class="delta"><span>[PLACEHOLDER] +N passed</span><span>[PLACEHOLDER] −N regressions</span><span>[PLACEHOLDER] new failures: ids</span></p>
+  </section>
+
+  <section class="cell" data-reveal>
+    <h2>Ledger</h2>
+    <div class="table-wrap" tabindex="0"><table>
+      <caption class="sr">Eval results</caption>
+      <thead><tr><th scope="col">Eval id</th><th scope="col">Status</th><th scope="col" class="num">Expected</th><th scope="col" class="num">Actual</th><th scope="col">Evidence</th></tr></thead>
+      <tbody><tr><th scope="row">[PLACEHOLDER] E-01</th><td>pass</td><td class="num">—</td><td class="num">—</td><td>[PLACEHOLDER] link to log</td></tr></tbody>
+    </table></div>
+  </section>
+</main>
+<script>if (window.Kit) Kit.init();</script>
+</body>
+</html>

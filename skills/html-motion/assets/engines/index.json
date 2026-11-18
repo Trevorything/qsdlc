@@ -1,0 +1,187 @@
+{
+  "schema": 1,
+  "contract": "Engines.name(canvas,{W,H,...}) -> {start,stop,redraw,drawAt,set,resize,destroy}",
+  "tokens": [
+    "--bg",
+    "--surface",
+    "--panel",
+    "--line",
+    "--ink",
+    "--muted",
+    "--hi",
+    "--ok",
+    "--alt",
+    "--risk"
+  ],
+  "core": {
+    "file": "_core.js",
+    "bytes": 14520
+  },
+  "engines": [
+    {
+      "name": "streams",
+      "file": "streams.js",
+      "shows": "Things moving at different rates",
+      "cost": "2D",
+      "pure": false,
+      "gpu": false,
+      "options": [
+        "lanes",
+        "count",
+        "speed",
+        "colors",
+        "dir",
+        "size",
+        "trail",
+        "seed",
+        "speedScale"
+      ],
+      "bytes": 2655
+    },
+    {
+      "name": "graph",
+      "file": "graph.js",
+      "shows": "A network with travelers along its links",
+      "cost": "2D",
+      "pure": false,
+      "gpu": false,
+      "options": [
+        "nodes",
+        "links",
+        "travelers",
+        "speed",
+        "hubs",
+        "colors",
+        "seed",
+        "speedScale"
+      ],
+      "bytes": 4848
+    },
+    {
+      "name": "expand",
+      "file": "expand.js",
+      "shows": "Reach growing around a fixed core",
+      "cost": "2D",
+      "pure": true,
+      "gpu": false,
+      "options": [
+        "dur",
+        "rings",
+        "points",
+        "maxR",
+        "cx",
+        "cy",
+        "label",
+        "colors",
+        "seed"
+      ],
+      "bytes": 2907
+    },
+    {
+      "name": "pullback",
+      "file": "pullback.js",
+      "shows": "One unit, then the whole grid, then work passing between",
+      "cost": "2D",
+      "pure": false,
+      "gpu": false,
+      "options": [
+        "dur",
+        "cols",
+        "rows",
+        "travelers",
+        "label",
+        "colors",
+        "seed"
+      ],
+      "bytes": 4060
+    },
+    {
+      "name": "split",
+      "file": "split.js",
+      "shows": "One stream dividing into two branches",
+      "cost": "2D",
+      "pure": false,
+      "gpu": false,
+      "options": [
+        "ratio",
+        "count",
+        "speed",
+        "colors",
+        "labels",
+        "seed",
+        "speedScale"
+      ],
+      "bytes": 3111
+    },
+    {
+      "name": "transform",
+      "file": "transform.js",
+      "shows": "A familiar object becoming a larger version of itself (showpiece)",
+      "cost": "2D",
+      "pure": true,
+      "gpu": false,
+      "options": [
+        "dur",
+        "rows",
+        "cols",
+        "scale",
+        "label",
+        "color"
+      ],
+      "bytes": 2907
+    },
+    {
+      "name": "morph",
+      "file": "morph.js",
+      "shows": "One passage of text becoming another, with lost words drifting off",
+      "cost": "2D",
+      "pure": true,
+      "gpu": false,
+      "options": [
+        "from",
+        "to",
+        "font",
+        "width",
+        "align",
+        "dur"
+      ],
+      "bytes": 5080
+    },
+    {
+      "name": "shader",
+      "file": "shader.js",
+      "shows": "A full-surface flowing field or contour map",
+      "cost": "GPU",
+      "pure": true,
+      "gpu": true,
+      "options": [
+        "speed",
+        "scale",
+        "lines",
+        "lineAlpha",
+        "quality",
+        "still"
+      ],
+      "bytes": 3382
+    },
+    {
+      "name": "terrain",
+      "file": "terrain.js",
+      "shows": "A camera flying over a 3D landscape, with data columns and pinned labels",
+      "cost": "GPU",
+      "pure": true,
+      "gpu": true,
+      "options": [
+        "columns",
+        "amp",
+        "lines",
+        "speed",
+        "fog",
+        "quality",
+        "still",
+        "seed"
+      ],
+      "bytes": 8834
+    }
+  ]
+}

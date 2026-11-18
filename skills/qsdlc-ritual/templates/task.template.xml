@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+  Windows Task Scheduler template for a QSDLC ritual.
+  Replace every {{PLACEHOLDER}}, then save as UTF-16 (PowerShell: Set-Content -Encoding Unicode) and register:
+    schtasks /Create /TN "QSDLC-{{NAME}}" /XML task.xml
+  START_BOUNDARY example: 2026-11-23T09:00:00   DAY is one element name: Monday, Tuesday, ... Sunday
+-->
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>QSDLC ritual {{NAME}}. Autonomous, draft-PR-only. Never merges.</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <CalendarTrigger>
+      <StartBoundary>{{START_BOUNDARY}}</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByWeek>
+        <DaysOfWeek>
+          <{{DAY}} />
+        </DaysOfWeek>
+        <WeeksInterval>1</WeeksInterval>
+      </ScheduleByWeek>
+    </CalendarTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <ExecutionTimeLimit>PT{{MAX_MINUTES}}M</ExecutionTimeLimit>
+    <Enabled>true</Enabled>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>powershell.exe</Command>
+      <Arguments>-NoProfile -ExecutionPolicy Bypass -File &quot;{{RUN_RITUAL_PS1}}&quot; -Ritual {{NAME}} -Root &quot;{{PROJECT_ROOT}}&quot;</Arguments>
+      <WorkingDirectory>{{PROJECT_ROOT}}</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>

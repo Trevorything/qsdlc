@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="brand-source" content="unbranded">
+<meta name="color-scheme" content="light dark">
+<title>[PLACEHOLDER] Mood field — the vibe, not the spec</title>
+<!-- how this was made: archetype=moodfield (structure only; tokens come from brand-bind.json) -->
+<style id="tokens">
+/* unbranded placeholder — overwritten by brand-bind */
+:root{--bg:#f6f5f2;--surface:#fdfcfa;--panel:#ebe9e4;--line:#d4d1c9;--ink:#1d1c1a;--muted:#5c5a54;--hi:#0b6b6b;--ok:#2f6b2f;--alt:#8a5a00;--risk:#a8321f;
+--radius:2px;--border:1px;--font-display:ui-serif,serif;--font-sans:ui-sans-serif,system-ui,sans-serif;--font-mono:ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}}
+:root[data-theme="dark"]{--bg:#151513;--surface:#1d1c1a;--panel:#272622;--line:#3a3833;--ink:#ecebe6;--muted:#a4a199;--hi:#4cc2b8;--ok:#7cc47c;--alt:#e0b04a;--risk:#f08a73}
+</style>
+<!-- qsdlc-present:start -->
+<!-- inline.mjs injects kit.css + kit.js (+ html-motion shader/streams engine if rolled for the field) here -->
+<!-- qsdlc-present:end -->
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);line-height:1.5}
+h1,h2,p{margin:0}
+:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+.field{min-height:100vh;padding:clamp(1.5rem,5vw,4rem) 16px;display:grid;gap:clamp(1rem,3vw,2rem);grid-template-columns:repeat(12,minmax(0,1fr));align-content:start;
+  background-image:repeating-linear-gradient(0deg,transparent 0 31px,color-mix(in srgb,var(--line) 70%,transparent) 31px 32px)}
+.frag{grid-column:span 12}
+.word{grid-column:1/-1;font-family:var(--font-display);font-size:clamp(2.5rem,9vw,9rem);line-height:.9;letter-spacing:-.04em;color:var(--hi);overflow-wrap:break-word}
+.quote{grid-column:1/span 7;font-family:var(--font-display);font-size:clamp(1.5rem,3.4vw,2.6rem);line-height:1.15;border-left:2px solid var(--hi);padding-left:1rem}
+.quote cite{display:block;margin-top:.75rem}
+.note{grid-column:9/span 4;color:var(--muted);align-self:end}
+.chips{grid-column:1/span 7;display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{display:inline-flex;align-items:center;gap:.5rem;background:var(--surface);border:var(--border) solid var(--line);border-radius:var(--radius);padding:.3rem .6rem;font:600 12px var(--font-mono)}
+.chip i{width:14px;height:14px;border:var(--border) solid var(--line)}
+.not{grid-column:1/-1;border-top:var(--border) solid var(--line);padding-top:1rem;color:var(--muted);max-width:60ch}
+@media (max-width:48rem){.quote,.note,.chips{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}[data-reveal]{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+<main class="field">
+  <h1 class="word" data-reveal>[PLACEHOLDER]</h1>
+  <blockquote class="quote" data-reveal style="margin:0">
+    [PLACEHOLDER] A phrase lifted from the interview, set as type.
+    <cite class="eyebrow">— [PLACEHOLDER] who said it</cite>
+  </blockquote>
+  <p class="note" data-reveal>[PLACEHOLDER] One sentence on the feeling we are after: how it should read, move, and sound.</p>
+  <div class="chips" data-reveal aria-label="Palette tokens">
+    <span class="chip"><i style="background:var(--bg)"></i>--bg</span><span class="chip"><i style="background:var(--ink)"></i>--ink</span>
+    <span class="chip"><i style="background:var(--hi)"></i>--hi</span><span class="chip"><i style="background:var(--ok)"></i>--ok</span>
+    <span class="chip"><i style="background:var(--alt)"></i>--alt</span><span class="chip"><i style="background:var(--risk)"></i>--risk</span>
+  </div>
+  <p class="not" data-reveal><span class="eyebrow">What this is not</span><br>[PLACEHOLDER] It is not a wireframe or a spec. It confirms the vibe before design grounds it.</p>
+</main>
+<script>if (window.Kit) Kit.init();</script>
+</body>
+</html>
